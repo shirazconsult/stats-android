@@ -1,0 +1,19 @@
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:padding="10dp" >
+ 
+    <TextView
+        android:id="@+id/chart_menu_item"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_alignParentLeft="true"
+        android:layout_centerVertical="true"
+        android:paddingLeft="50dp"
+	    android:textColor="#fff"
+	    android:textSize="15sp"
+	    android:textAppearance="?android:attr/textAppearanceListItemSmall"
+    	android:background="?android:attr/activatedBackgroundIndicator"
+    	android:minHeight="12dp"/>
+    
+</RelativeLayout>

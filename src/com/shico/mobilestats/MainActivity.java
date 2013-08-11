@@ -1,7 +1,5 @@
 package com.shico.mobilestats;
 
-import java.io.CharArrayReader;
-
 import android.app.Activity;
 import android.app.Fragment;
 import android.app.FragmentManager;
@@ -13,19 +11,14 @@ import android.view.Gravity;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
-import android.widget.AdapterView;
-import android.widget.ArrayAdapter;
-import android.widget.ListView;
+import android.widget.ExpandableListView;
 
 public class MainActivity extends Activity {
 	public final static String ARG_MENU_ITEM_IDX = "menu.item.idx";
-	public final static int CHARTS_MENU_IDX = 0;
-	public final static int SETTINGS_MENU_IDX = 1;
-	public final static int HELP_MENU_IDX = 2;
-	public final static int ABOUT_MENU_IDX = 3;
+	public final static String ARG_MENU_CHART_ITEM_NAME = "menu.chart.item.name";
 	
     private DrawerLayout mDrawerLayout;
-    private ListView mMenuDrawer;
+    private ExpandableListView mMenuDrawer;
     private ActionBarDrawerToggle mDrawerToggle;
 
     private CharSequence mDrawerMenuTitle;
@@ -39,12 +32,19 @@ public class MainActivity extends Activity {
 		
         mTitle = mDrawerMenuTitle = getTitle();
 		mDrawerLayout = (DrawerLayout)findViewById(R.id.drawer_layout);
-		mMenuDrawer = (ListView)findViewById(R.id.menu_drawer);
+		mMenuDrawer = (ExpandableListView)findViewById(R.id.menu_drawer);
 		mDrawerMenuItems = getResources().getStringArray(R.array.menu_items);
 		
 		mDrawerLayout.setDrawerShadow(R.drawable.drawer_shadow, Gravity.START);
-		mMenuDrawer.setAdapter(new ArrayAdapter<String>(this, R.layout.drawer_menu_item, mDrawerMenuItems));
-		mMenuDrawer.setOnItemClickListener(new DrawerItemClickListener());
+		mMenuDrawer.setAdapter(new MenuAdapter(this));
+		if(android.os.Build.VERSION.SDK_INT < android.os.Build.VERSION_CODES.JELLY_BEAN_MR2) {
+			mMenuDrawer.setIndicatorBounds(25, 45);
+		} else {
+			mMenuDrawer.setIndicatorBoundsRelative(25, 45);
+		}		
+		MenuItemClickListener menuItemClickListener = new MenuItemClickListener();
+		mMenuDrawer.setOnChildClickListener(menuItemClickListener);
+		mMenuDrawer.setOnGroupClickListener(menuItemClickListener);
 		
         // enable ActionBar app icon to behave as action to toggle nav drawer
         getActionBar().setDisplayHomeAsUpEnabled(true);
@@ -72,7 +72,7 @@ public class MainActivity extends Activity {
         mDrawerLayout.setDrawerListener(mDrawerToggle);
 
         if (savedInstanceState == null) {
-            selectItem(0);
+            mMenuDrawer.setSelectedGroup(0);
         }
 
 	}
@@ -99,29 +99,92 @@ public class MainActivity extends Activity {
     }
 
     /* The click listner for ListView in the navigation drawer */
-    private class DrawerItemClickListener implements ListView.OnItemClickListener {
-        @Override
-        public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
-            selectItem(position);
-        }
-    }
+    private class MenuItemClickListener implements ExpandableListView.OnChildClickListener, ExpandableListView.OnGroupClickListener {
+		@Override
+		public boolean onChildClick(ExpandableListView parent, View v,
+				int groupPosition, int childPosition, long id) {
+			String[] chartItems = parent.getContext().getResources().getStringArray(R.array.menu_chart_items);
+			String chartName = chartItems[childPosition]; 
 
+			Bundle args = new Bundle();
+	        args.putString("temp.html", "<html><body><h1>Here comes Chart for "+chartName+".</h1></body></html>");
+	        args.putInt(ARG_MENU_ITEM_IDX, groupPosition);
+	        args.putString(ARG_MENU_CHART_ITEM_NAME, chartName);
+	        
+	        setFragment(args);
+	        
+	        // update selected item and title, then close the drawer
+	        mMenuDrawer.setItemChecked(childPosition+groupPosition+1, true);
+	        setTitle(chartName);
+	        mDrawerLayout.closeDrawer(mMenuDrawer);
+	        
+	        return true;
+		}
+
+		@Override
+		public boolean onGroupClick(ExpandableListView parent, View v, int groupPosition, long id) {
+	        Bundle args = new Bundle();
+	        switch(groupPosition){
+	        	case MenuAdapter.CHARTS_MENU_IDX: 
+	        		if(mMenuDrawer.isGroupExpanded(groupPosition)){
+	        			mMenuDrawer.collapseGroup(groupPosition);
+	        		}else{
+	        			mMenuDrawer.expandGroup(groupPosition);
+	        		}
+	        		mMenuDrawer.setItemChecked(groupPosition, true);
+	        		return true;
+	        	case MenuAdapter.SETTINGS_MENU_IDX:
+	        		args.putString("temp.html", "<html><body><h1>Here comes Settings.</h1></body></html>");
+	        		break;
+	        	case MenuAdapter.HELP_MENU_IDX:
+	        		args.putString("temp.html", "<html><body><h1>Here comes Help/Manual info.</h1></body></html>");
+	        		break;
+	        	case MenuAdapter.ABOUT_MENU_IDX:
+	        		args.putString("temp.html", "<html><body><h1>Here comes About info.</h1></body></html>");
+	        		break;
+	        	default:
+	        		throw new IllegalArgumentException("No such menu item.");
+	        }
+	        args.putInt(ARG_MENU_ITEM_IDX, groupPosition);
+	        
+	        setFragment(args);
+	        
+	        // update selected item and title, then close the drawer
+	        mMenuDrawer.collapseGroup(MenuAdapter.CHARTS_MENU_IDX);
+	        mMenuDrawer.setItemChecked(groupPosition, true);
+	        setTitle(mDrawerMenuItems[groupPosition]);
+	        if(groupPosition != MenuAdapter.CHARTS_MENU_IDX){
+	        	mDrawerLayout.closeDrawer(mMenuDrawer);
+	        }
+	        return true;
+		}	
+		
+		private void setFragment(Bundle args){
+	        // update the main content by replacing fragments
+	        Fragment fragment = new WebViewFragment();
+	        fragment.setArguments(args);
+
+	        FragmentManager fragmentManager = getFragmentManager();
+	        fragmentManager.beginTransaction().replace(R.id.content_frame, fragment).commit();			
+		}
+    }
+    
     private void selectItem(int position) {
         // update the main content by replacing fragments
         Fragment fragment = new WebViewFragment();
         Bundle args = new Bundle();
         switch(position){
-        	case CHARTS_MENU_IDX: 
+        	case MenuAdapter.CHARTS_MENU_IDX: 
         		args.putInt(WebViewFragment.ARG_CHART_ID, position);
         		args.putString(WebViewFragment.ARG_CHART_URL, "http://shirazconsult.blogspot.dk/");
         		break;
-        	case SETTINGS_MENU_IDX:
+        	case MenuAdapter.SETTINGS_MENU_IDX:
         		args.putString("temp.html", "<html><body><h1>Here comes Settings.</h1></body></html>");
         		break;
-        	case HELP_MENU_IDX:
+        	case MenuAdapter.HELP_MENU_IDX:
         		args.putString("temp.html", "<html><body><h1>Here comes Help/Manual info.</h1></body></html>");
         		break;
-        	case ABOUT_MENU_IDX:
+        	case MenuAdapter.ABOUT_MENU_IDX:
         		args.putString("temp.html", "<html><body><h1>Here comes About info.</h1></body></html>");
         		break;
         	default:

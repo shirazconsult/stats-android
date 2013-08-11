@@ -9,6 +9,12 @@
         <item>Help</item>
         <item>About</item>
     </string-array>
+    <string-array name="menu_chart_items">
+        <item>Channels</item>
+        <item>Movies</item>
+        <item>Programs</item>
+        <item>Widgets</item>
+    </string-array>
     <string name="drawer_open">Open navigation drawer</string>
     <string name="drawer_close">Close navigation drawer</string>
     <string name="action_websearch">Web search</string>

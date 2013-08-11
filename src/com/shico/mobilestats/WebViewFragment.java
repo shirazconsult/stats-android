@@ -33,12 +33,15 @@ public class WebViewFragment extends Fragment {
 		
 		int idx = getArguments().getInt(MainActivity.ARG_MENU_ITEM_IDX);
 		switch (idx) {
-		case MainActivity.CHARTS_MENU_IDX:
-			loadChartUrl(savedInstanceState, wv);
+		case MenuAdapter.CHARTS_MENU_IDX:
+			String chartName = getArguments().getString(MainActivity.ARG_MENU_CHART_ITEM_NAME);
+			if(chartName != null){
+				wv.loadData(getArguments().getString("temp.html"), "text/html", null);
+			}
 			break;
-		case MainActivity.SETTINGS_MENU_IDX:
-		case MainActivity.HELP_MENU_IDX:
-		case MainActivity.ABOUT_MENU_IDX:
+		case MenuAdapter.SETTINGS_MENU_IDX:
+		case MenuAdapter.HELP_MENU_IDX:
+		case MenuAdapter.ABOUT_MENU_IDX:
 			wv.loadData(getArguments().getString("temp.html"), "text/html", null);
 			break;
 		default:
