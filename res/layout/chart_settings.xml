@@ -1,0 +1,130 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="wrap_content"
+    android:layout_height="wrap_content"
+    android:orientation="vertical" >
+
+    <LinearLayout
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:divider="@drawable/divider"
+        android:showDividers="middle"
+        android:orientation="vertical" >
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="@string/y_axis_title"
+            android:textStyle="bold"
+            android:textColor="@color/White"
+            android:textSize="18sp" />
+
+        <RadioGroup
+            android:id="@+id/radio_gr_yaxis"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal">
+
+            <RadioButton
+                android:id="@+id/radio_btn_viewer"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:checked="true"
+	            android:textColor="@color/White"
+                android:text="@string/viewers" />
+
+            <RadioButton
+                android:id="@+id/radio_btn_duration"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:textColor="@color/White"
+                android:text="@string/duration" />
+        </RadioGroup>
+    </LinearLayout>
+
+    <LinearLayout
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:divider="@drawable/divider"
+        android:showDividers="middle"     
+        android:layout_marginTop="4dp"        
+        android:orientation="vertical" >
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="@string/score_type_title"
+            android:textStyle="bold"            
+            android:textColor="@color/White"
+            android:textSize="18sp" />
+
+        <RadioGroup
+            android:id="@+id/radio_gr_score_type"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal" >
+
+            <RadioButton
+                android:id="@+id/radio_btn_top"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:checked="true"
+	            android:textColor="@color/White"
+                android:text="@string/top" />
+
+            <RadioButton
+                android:id="@+id/radio_btn_bottom"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+	            android:textColor="@color/White"
+                android:text="@string/bottom" />
+        </RadioGroup>
+    </LinearLayout>
+
+    <LinearLayout
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:divider="@drawable/divider"
+        android:showDividers="middle"
+        android:layout_marginTop="4dp"        
+        android:orientation="vertical" >
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="@string/num_of_score_items_title"
+            android:textStyle="bold"
+            android:textColor="@color/White"
+            android:textSize="18sp" />
+
+        <RadioGroup
+            android:id="@+id/radio_gr_score_num"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal" >
+
+            <RadioButton
+                android:id="@+id/radio_btn_3"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+	            android:textColor="@color/White"
+                android:text="@string/three" />
+
+            <RadioButton
+                android:id="@+id/radio_btn_5"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:checked="true"
+	            android:textColor="@color/White"
+                android:text="@string/five" />
+
+            <RadioButton
+                android:id="@+id/radio_btn_10"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+	            android:textColor="@color/White"
+                android:text="@string/ten" />
+        </RadioGroup>
+    </LinearLayout>
+
+</LinearLayout>

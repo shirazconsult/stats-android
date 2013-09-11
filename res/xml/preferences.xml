@@ -1,0 +1,68 @@
+<?xml version="1.0" encoding="utf-8"?>
+<PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android" >
+
+    <PreferenceCategory
+        android:key="global_settings"
+        android:orderingFromXml="true"
+        android:title="@string/global_settings_title" >
+        <EditTextPreference
+            android:defaultValue="10.0.2.2"
+            android:dialogTitle="@string/server_addr_dialog_title"
+            android:key="host"
+            android:order="1"
+            android:persistent="true"
+            android:title="@string/server_addr_title" 
+            android:summary="@string/server_addr_sum"/>
+        <EditTextPreference
+            android:defaultValue="9119"
+            android:dialogTitle="@string/server_port_dialog_title"
+            android:key="port"
+            android:order="2"
+            android:persistent="true"
+            android:title="@string/server_port_title" 
+            android:summary="@string/server_port_sum"/>
+    </PreferenceCategory>
+    <PreferenceCategory
+        android:key="chart_settings"
+        android:orderingFromXml="true"
+        android:title="@string/chart_settings_title" >
+        <ListPreference
+            android:defaultValue="@string/viewers"
+            android:dialogTitle="@string/y_axis_title"
+            android:entries="@array/y_axis"
+            android:entryValues="@array/y_axis"
+            android:key="yAxis"
+            android:persistent="true"
+            android:selectable="true"
+            android:title="@string/y_axis_title" 
+            android:summary="@string/y_axis_sum"/>
+        <ListPreference
+            android:defaultValue="@string/top"
+            android:dialogTitle="@string/score_type_title"
+            android:entries="@array/scoreType"
+            android:entryValues="@array/scoreType"
+            android:key="score"
+            android:persistent="true"
+            android:selectable="true" 
+            android:title="@string/score_type_title"
+            android:summary="@string/score_type_sum"/>
+        <ListPreference
+            android:defaultValue="5"
+            android:dialogTitle="@string/num_of_score_items_title"
+            android:entries="@array/num_of_score_items"
+            android:entryValues="@array/num_of_score_items"
+            android:key="scoreNum"
+            android:persistent="true" 
+            android:title="@string/num_of_score_items_title"/>
+    </PreferenceCategory>
+	<com.shico.mobilestats.ResetDialogPreference
+        android:dialogMessage="@string/reset_msg"
+        android:key="resetDialog"
+        android:negativeButtonText="@string/reset_negativ"
+        android:persistent="false"
+        android:positiveButtonText="@string/reset_positiv"
+        android:summary="@string/reset_summery"
+        android:title="@string/reset_title" >
+    </com.shico.mobilestats.ResetDialogPreference>
+    
+</PreferenceScreen>

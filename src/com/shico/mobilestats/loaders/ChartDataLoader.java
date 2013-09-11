@@ -1,5 +1,8 @@
 package com.shico.mobilestats.loaders;
 
+import java.util.HashMap;
+import java.util.Map;
+
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -47,6 +50,8 @@ public abstract class ChartDataLoader {
 		return col;
 	}
 	
+	Map<String, JSONObject> temporaryCache = new HashMap<String, JSONObject>();
+	
 	public void getTopView(String restCmd, String from, String to, String options){
 		String url = new StringBuilder(BASE_URL).
 				append(restCmd).
@@ -55,7 +60,12 @@ public abstract class ChartDataLoader {
 				append("/").append(options).
 				toString();
 		
-		loadChartTopViewData(url);
+		JSONObject cached = temporaryCache.get(url);
+		if(cached == null){
+			loadChartTopViewData(url);
+		}else{
+			sendBroadcast(ChartEvent.SUCCESS);
+		}
 	}
 
 	public void getTopViewInBatch(String restCmd, String from, String to, String options){
@@ -66,18 +76,21 @@ public abstract class ChartDataLoader {
 				append("/").append(options).
 				toString();
 		
-		loadChartTopViewDataInBatch(url);
+		JSONObject cached = temporaryCache.get(url);
+		if(cached == null){
+			loadChartTopViewDataInBatch(url);
+		}else{
+			sendBroadcast(ChartEvent.SUCCESS);
+		}
 	}
 
-	protected abstract JSONObject getDataTable() throws JSONException;
+	public abstract JSONObject getDataTable() throws JSONException;
 	protected abstract String getIntentAction();
 		
-	public void loadChartTopViewDataInBatch(String url){
+	public void loadChartTopViewDataInBatch(final String url){
 		client.get(url, new JsonHttpResponseHandler(){
 			@Override
 			public void onSuccess(JSONObject res) {
-				Intent intent = new Intent(getIntentAction());
-				intent.putExtra(ChartEvent.DATA_LOAD_STATUS, ChartEvent.SUCCESS);
 				try {
 					JSONArray rows = res.getJSONArray("result");
 					int rownum = 0;
@@ -86,49 +99,53 @@ public abstract class ChartDataLoader {
 						for (int j=0; j<row.length(); j++){			
 							getDataTable().getJSONArray("rows").put(rownum++, row.getJSONObject(j).getJSONArray("result"));
 						}
+						temporaryCache.put(url, getDataTable());
 					}
 				} catch (JSONException e) {
-					intent.putExtra(ChartEvent.DATA_LOAD_STATUS, ChartEvent.FAILURE);
+					sendBroadcast(ChartEvent.FAILURE);
+					return;
 				}
-				LocalBroadcastManager.getInstance(context).sendBroadcast(intent);
+				sendBroadcast(ChartEvent.SUCCESS);
 			}
 
 			@Override
 			public void onFailure(Throwable t, JSONObject arg1) {
 				Log.e("ChartDataLoader", "Failed to retrieve data for "+getIntentAction()+". "+(t != null ? t.getMessage() : ""));
-				Intent intent = new Intent(getIntentAction());
-				intent.putExtra(ChartEvent.DATA_LOAD_STATUS, ChartEvent.FAILURE);
-				LocalBroadcastManager.getInstance(context).sendBroadcast(intent);
+				sendBroadcast(ChartEvent.FAILURE);
 			}
 		});		
 	}
 	
-	public void loadChartTopViewData(String url){
+	public void loadChartTopViewData(final String url){
 		client.get(url, new JsonHttpResponseHandler(){
 			@Override
 			public void onSuccess(JSONObject res) {
-				Intent intent = new Intent(getIntentAction());
-				intent.putExtra(ChartEvent.DATA_LOAD_STATUS, ChartEvent.SUCCESS);
 				try {
 					JSONArray rows = res.getJSONArray("rows");
 					for(int i=0; i< rows.length(); i++){
 						JSONArray row = rows.getJSONObject(i).getJSONArray("result");
 						getDataTable().getJSONArray("rows").put(row);
 					}
+					temporaryCache.put(url, getDataTable());
 				} catch (JSONException e) {
-					intent.putExtra(ChartEvent.DATA_LOAD_STATUS, ChartEvent.FAILURE);
+					sendBroadcast(ChartEvent.FAILURE);
+					return;
 				}
-				LocalBroadcastManager.getInstance(context).sendBroadcast(intent);
+				sendBroadcast(ChartEvent.SUCCESS);
 			}
 
 			@Override
 			public void onFailure(Throwable t, JSONObject arg1) {
 				Log.e("ChartDataLoader", "Failed to retrieve data for "+getIntentAction()+". "+(t != null ? t.getMessage() : ""));
-				Intent intent = new Intent(getIntentAction());
-				intent.putExtra(ChartEvent.DATA_LOAD_STATUS, ChartEvent.FAILURE);
-				LocalBroadcastManager.getInstance(context).sendBroadcast(intent);
+				sendBroadcast(ChartEvent.FAILURE);
 			}
 		});
+	}
+		
+	private void sendBroadcast(int status){
+		Intent intent = new Intent(getIntentAction());
+		intent.putExtra(ChartEvent.DATA_LOAD_STATUS, status);
+		LocalBroadcastManager.getInstance(context).sendBroadcast(intent);
 	}
 	
 	private String getLiveUsageUrl(String from, String to){

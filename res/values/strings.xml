@@ -1,6 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
 
+    <!-- Main Menu -->
+    <!-- ######### -->
     <string name="app_name">MobileStats</string>
     <string name="action_settings">Settings</string>
     <string-array name="menu_items">
@@ -19,4 +21,51 @@
     <string name="drawer_close">Close navigation drawer</string>
     <string name="action_websearch">Web search</string>
     
+    <!-- Preferences -->
+    <!-- ########### -->
+    <string name="global_settings_title">Global Settings</string>
+    <string name="server_addr_dialog_title">Server Address</string>
+    <string name="server_addr_title">Host Name/IP</string>
+    <string name="server_addr_sum">Name or IP address of the statistics REST service</string>
+    <string name="server_port_dialog_title">Host Name/IP"</string>
+    <string name="server_port_title">Port</string>
+    <string name="server_port_sum">Port number of the statistics REST service</string>
+    <string name="chart_settings_title">Default Chart Settings</string>
+    <string name="y_axis_title">Y Axis</string>
+    <string name="y_axis_sum">Whether data should be retrieved based on the number of viewers or the total usage time</string>
+    <string name="score_type_title">Score Type</string>
+    <string name="score_type_sum">Top \'x\' viewers or duration or bottom \'x\' viewers or duration ?</string>
+    <string name="num_of_score_items_title">Number of items</string>
+    <string name="viewers">Viewers</string>
+    <string name="duration">Duration</string>
+    <string name="top">Top</string>
+    <string name="bottom">Buttom</string>
+    <string-array name="y_axis">
+        <item>Viewers</item>
+        <item>Duration</item>
+    </string-array>
+    <string-array name="scoreType">
+        <item>Top</item>
+        <item>Bottom</item>
+    </string-array>
+    <string-array name="num_of_score_items">
+        <item>3</item>
+        <item>5</item>
+        <item>7</item>
+        <item>10</item>
+    </string-array>
+    <string name="three">Three</string>
+    <string name="five">Five</string>
+    <string name="ten">Ten</string>
+    <!-- reset preference dialog -->
+    <string name="reset_msg">Reset all values to their defaults?</string>
+    <string name="reset_negativ">No, keep current values</string>
+    <string name="reset_positiv">Yes, RESET all values</string>
+    <string name="reset_summery">Reset all settings to their initial values.</string>
+    <string name="reset_title">Reset to default</string>
+    
+    <!-- Buttons -->
+    <!-- ####### -->
+    <string name="fetch">Fetch</string>
+    <string name="cancel">Cancel</string>
 </resources>

@@ -1,0 +1,15 @@
+<html>
+  <head>
+    <script type="text/javascript">
+      function drawChart() {
+		console.log('Processed DataTable.. Drawing');
+		document.getElementById('chart_div').innerHTML="<em>LOADED .....</em>
+		
+      }      
+	}      
+    </script>
+  </head>
+  <body>
+    <div id="chart_div" style="width: 100%; height: 70%;"></div>
+  </body>
+</html>

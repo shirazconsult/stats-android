@@ -18,7 +18,7 @@ public class LiveUsageChartDataLoader extends ChartDataLoader {
 	}
 
 	@Override
-	protected JSONObject getDataTable() throws JSONException {
+	public JSONObject getDataTable() throws JSONException {
 		if(dataTable == null){
 			dataTable = new JSONObject();
 			dataTable.put("cols", topViewColumns);
