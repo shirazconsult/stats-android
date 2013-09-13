@@ -9,11 +9,14 @@ import org.json.JSONObject;
 
 import android.content.Context;
 import android.content.Intent;
+import android.content.SharedPreferences;
+import android.preference.PreferenceManager;
 import android.support.v4.content.LocalBroadcastManager;
 import android.util.Log;
 
 import com.loopj.android.http.AsyncHttpClient;
 import com.loopj.android.http.JsonHttpResponseHandler;
+import com.shico.mobilestats.R;
 import com.shico.mobilestats.event.ChartEvent;
 
 public abstract class ChartDataLoader {
@@ -29,16 +32,22 @@ public abstract class ChartDataLoader {
 	public static String[] viewColumns = {"type", "name", "title", "viewers", "duration", "fromTS", "toTS"};
 	public static String[] topViewColumnNames = {"type", "name", "title", "viewers", "duration", "time"};
 
-	private static final String BASE_URL = "http://10.0.2.2:9119/statistics/rest/stats";
+	private static final String REST_PATH = "/statistics/rest/stats";
 	private static AsyncHttpClient client = new AsyncHttpClient();
 	protected static JSONArray topViewColumns;
 	protected Context context;
+	private String baseUrl;
+	private String host;
+	private int port;
 	
 	public ChartDataLoader(Context context) throws JSONException {
 		this.context = context;
 		if(topViewColumns == null){
 			topViewColumns = buildTopViewColumns();
 		}
+		SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(context);
+		host = prefs.getString("host", "localhost");
+		port = Integer.parseInt(prefs.getString("port", "9118"));
 	}
 	
 	private static JSONObject newColumn(String name, String type) throws JSONException{
@@ -53,7 +62,7 @@ public abstract class ChartDataLoader {
 	Map<String, JSONObject> temporaryCache = new HashMap<String, JSONObject>();
 	
 	public void getTopView(String restCmd, String from, String to, String options){
-		String url = new StringBuilder(BASE_URL).
+		String url = new StringBuilder(getBaseUrl()).
 				append(restCmd).
 				append("/").append(from).
 				append("/").append(to).
@@ -69,7 +78,7 @@ public abstract class ChartDataLoader {
 	}
 
 	public void getTopViewInBatch(String restCmd, String from, String to, String options){
-		String url = new StringBuilder(BASE_URL).
+		String url = new StringBuilder(getBaseUrl()).
 				append(restCmd).
 				append("/").append(from).
 				append("/").append(to).
@@ -92,6 +101,9 @@ public abstract class ChartDataLoader {
 			@Override
 			public void onSuccess(JSONObject res) {
 				try {
+					// empty the datatable rows
+					getDataTable().put("rows", new JSONArray());
+
 					JSONArray rows = res.getJSONArray("result");
 					int rownum = 0;
 					for(int i=0; i< rows.length(); i++){
@@ -121,7 +133,10 @@ public abstract class ChartDataLoader {
 			@Override
 			public void onSuccess(JSONObject res) {
 				try {
-					JSONArray rows = res.getJSONArray("rows");
+					// empty the datatable rows
+					getDataTable().put("rows", new JSONArray());
+
+					JSONArray rows = res.getJSONArray("rows");					
 					for(int i=0; i< rows.length(); i++){
 						JSONArray row = rows.getJSONObject(i).getJSONArray("result");
 						getDataTable().getJSONArray("rows").put(row);
@@ -149,7 +164,7 @@ public abstract class ChartDataLoader {
 	}
 	
 	private String getLiveUsageUrl(String from, String to){
-		return new StringBuilder(BASE_URL).
+		return new StringBuilder(getBaseUrl()).
 				append("/view/LiveUsage/").
 				append(from).append("/").append(to).
 				append("/viewers,top,10").
@@ -166,5 +181,20 @@ public abstract class ChartDataLoader {
 		cols.put(timeIdx, newColumn(topViewColumnNames[timeIdx], "string"));
 		
 		return cols;
+	}
+
+	private final String getBaseUrl() {
+		if(baseUrl == null){
+			baseUrl = new StringBuilder("http://").append(host).append(":").append(port).append(REST_PATH).toString();
+		}
+		return baseUrl;
+	}
+
+	public void setHost(String host) {
+		this.host = host;
+	}
+
+	public void setPort(int port) {
+		this.port = port;
 	}	
 }

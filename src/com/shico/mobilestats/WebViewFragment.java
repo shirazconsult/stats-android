@@ -10,9 +10,12 @@ import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
+import android.content.SharedPreferences;
+import android.content.SharedPreferences.OnSharedPreferenceChangeListener;
 import android.content.res.Configuration;
 import android.graphics.Color;
 import android.os.Bundle;
+import android.preference.PreferenceManager;
 import android.support.v4.content.LocalBroadcastManager;
 import android.util.DisplayMetrics;
 import android.util.Log;
@@ -35,14 +38,22 @@ import com.shico.mobilestats.event.ChartEvent;
 import com.shico.mobilestats.loaders.ChartDataLoader;
 import com.shico.mobilestats.loaders.LiveUsageChartDataLoader;
 
-public class WebViewFragment extends Fragment {
+public class WebViewFragment extends Fragment implements OnSharedPreferenceChangeListener{
 	public static final String ARG_CHART_ID = "chart_id";
 	public static final String ARG_CHART_URL = "chart_url";
-
+	
+	public static final String Y_AXIS_OPTION_SUFFIX = ".yAxis";
+	public static final String SCORE_NUM_OPTION_SUFFIX = ".scoreNum";
+	public static final String SCORE_TYPE_OPTION_SUFFIX = ".scoreType";
+	
 	private String currentURL;
 	private LiveUsageChartDataLoader liveUsageChartDataLoader; 
 	private MyWebClient myWebClient; 
-
+	private WebView thisWebView;
+	private DisplayMetrics metrics;
+	private String currentChartName;
+	private String currentChartOptions;
+	
 	@Override
 	public void onActivityCreated(Bundle savedInstanceState) {
 		super.onActivityCreated(savedInstanceState);
@@ -62,33 +73,38 @@ public class WebViewFragment extends Fragment {
 			Toast.makeText(getActivity(), "Failed to instantiate LiveUsageChartDataLoader.", Toast.LENGTH_SHORT).show();
 		}
 		
-		WebView wv = (WebView) v.findViewById(R.id.webview);
-		wv.getSettings().setJavaScriptEnabled(true);
-		wv.setWebViewClient(myWebClient);
-		wv.setWebChromeClient(new WebChromeClient());
-		wv.addJavascriptInterface(liveUsageChartDataLoader, "LiveUsageChartDataLoader");
+		thisWebView = (WebView) v.findViewById(R.id.webview);
+		thisWebView.getSettings().setJavaScriptEnabled(true);
+		thisWebView.setWebViewClient(myWebClient);
+		thisWebView.setWebChromeClient(new WebChromeClient());
+		thisWebView.addJavascriptInterface(liveUsageChartDataLoader, "LiveUsageChartDataLoader");
 		
-		setGestureListener(v, wv);
+		setGestureListener(v, thisWebView);
 		
 		int idx = getArguments().getInt(MainActivity.ARG_MENU_ITEM_IDX);
 		switch (idx) {
 		case MenuAdapter.CHARTS_MENU_IDX:
-			String chartName = getArguments().getString(MainActivity.ARG_MENU_CHART_ITEM_NAME);
-			if(chartName != null){
-				wv.loadUrl("file:///android_asset/LiveUsage.html");
+			currentChartName = getArguments().getString(MainActivity.ARG_MENU_CHART_ITEM_NAME);
+			currentChartOptions = getChartOptions(PreferenceManager.getDefaultSharedPreferences(getActivity()));
+			if(currentChartName != null){
+				thisWebView.loadUrl("file:///android_asset/LiveUsage.html");
 			}
 			break;
 		case MenuAdapter.HELP_MENU_IDX:
 		case MenuAdapter.ABOUT_MENU_IDX:
-			wv.loadData(getArguments().getString("temp.html"), "text/html", null);
+			thisWebView.loadData(getArguments().getString("temp.html"), "text/html", null);
 			break;
 		default:
 			throw new IllegalArgumentException("No webview for menu item idex: " + idx);
 		}
 		
+		// Get display metrics
+		metrics = new DisplayMetrics();
+		getActivity().getWindowManager().getDefaultDisplay().getMetrics(metrics);			
+		
 		return v;
 	}
-
+	
 	private static final int swipe_Min_Distance = 100;
 	private static final int swipe_Max_Distance = 350;
 	private static final int swipe_Min_Velocity = 100;
@@ -105,13 +121,11 @@ public class WebViewFragment extends Fragment {
 			@Override
 			public boolean onFling(MotionEvent e1, MotionEvent e2, float velocityX,
 					float velocityY) {
-				System.out.println(" ######### onFling");
 				final float xDistance = Math.abs(e1.getX() - e2.getX());
 				final float yDistance = Math.abs(e1.getY() - e2.getY());
 				if (xDistance > swipe_Max_Distance || yDistance > swipe_Max_Distance){
 					return false;
 				}
-				System.out.println(" ## Still in onFling");
 				velocityX = Math.abs(velocityX);
 				velocityY = Math.abs(velocityY);
 				boolean result = false;
@@ -125,11 +139,7 @@ public class WebViewFragment extends Fragment {
 					result = true;
 				} else if (velocityY > swipe_Min_Velocity
 						&& yDistance > swipe_Min_Distance) {
-					System.out.println(" ## Still in onFling>> Checking the metrics");					
-					if (e1.getY() > e2.getY()){ // bottom to up
-						DisplayMetrics metrics = new DisplayMetrics();
-						getActivity().getWindowManager().getDefaultDisplay().getMetrics(metrics);
-						System.out.println("################## "+e1.getY()+" , "+e2.getY()+" ##### "+metrics.heightPixels);
+					if ((e1.getY() > metrics.heightPixels - 200) &&  e1.getY() > e2.getY()){ // bottom to up
 						showSettings();
 					}else{
 						// swipe down
@@ -183,7 +193,7 @@ public class WebViewFragment extends Fragment {
 		@Override
 		public void onPageFinished(WebView view, String url) {
 			this.view = view;
-			liveUsageChartDataLoader.getTopViewInBatch("/viewbatch/LiveUsage", "2013-02", "2013-05", "viewers,top,3");			
+			liveUsageChartDataLoader.getTopViewInBatch("/viewbatch/LiveUsage", "2013-02", "2013-05", currentChartOptions);			
 		}
 		
 		// Broadcast receiver
@@ -222,16 +232,26 @@ public class WebViewFragment extends Fragment {
 	@Override
 	public void onResume() {
 		super.onResume();
+		
+		// register BroadcastReceiver
 		BroadcastReceiver eventReceiver = myWebClient.getEventReceiver();
 		IntentFilter filter = ((EventReceiver)eventReceiver).getIntentFilter();
 		LocalBroadcastManager.getInstance(this.getActivity()).registerReceiver(eventReceiver, filter);
+		
+		// register preference change Listener
+		PreferenceManager.getDefaultSharedPreferences(getActivity()).registerOnSharedPreferenceChangeListener(this);
 	}
 
 	@Override
 	public void onPause() {
 		super.onPause();
-		
+
+		// unregister BroadcastReceiver
 		LocalBroadcastManager.getInstance(getActivity()).unregisterReceiver(myWebClient.getEventReceiver());
+		
+		// unregister preference change Listener
+		PreferenceManager.getDefaultSharedPreferences(getActivity()).unregisterOnSharedPreferenceChangeListener(this);
+
 	}
 
 	static class LiveUsageEventReciever extends BroadcastReceiver {
@@ -241,9 +261,15 @@ public class WebViewFragment extends Fragment {
 		}
 	}
 
+	private ChartSettingsDialogFragment chartSettingsDialog;
 	private void showSettings(){
-		ChartSettingsDialogFragment csdf = new ChartSettingsDialogFragment();
-		csdf.show(getFragmentManager(), "test");
+		if(chartSettingsDialog == null){
+			chartSettingsDialog = new ChartSettingsDialogFragment();
+		}
+		Bundle args = new Bundle();
+		args.putString("chartName", currentChartName);
+		chartSettingsDialog.setArguments(args);
+		chartSettingsDialog.show(getFragmentManager(), "test");
 	}
 	
 	// Table
@@ -254,8 +280,8 @@ public class WebViewFragment extends Fragment {
 		try {
 			JSONObject jsonTable = liveUsageChartDataLoader.getDataTable();
 			JSONArray rows = jsonTable.getJSONArray("rows");
-			
 
+			table.removeAllViews();
 			// header
 			tableRowLayoutParams = (isPortrait() 
 					? new LayoutParams(LayoutParams.MATCH_PARENT, LayoutParams.WRAP_CONTENT)
@@ -326,5 +352,32 @@ public class WebViewFragment extends Fragment {
 	
 	private boolean isPortrait(){
 		return getResources().getConfiguration().orientation == Configuration.ORIENTATION_PORTRAIT;
+	}
+
+	@Override
+	public void onSharedPreferenceChanged(SharedPreferences sharedPreferences, String key) {
+		if(key.startsWith(currentChartName)){
+			currentChartOptions = getChartOptions(sharedPreferences);
+			thisWebView.loadUrl("file:///android_asset/LiveUsage.html");
+			return;
+		}
+		if(key.equals("host") || key.equals("port")){
+			String host = sharedPreferences.getString("host", "localhost");
+			int port = sharedPreferences.getInt("port", 9119);
+			if(liveUsageChartDataLoader != null){
+				liveUsageChartDataLoader.setHost(host);
+				liveUsageChartDataLoader.setPort(port);
+			}
+		}
+	}
+	
+	private String getChartOptions(SharedPreferences prefs){
+		String viewersOrDuration = prefs.getString(currentChartName+Y_AXIS_OPTION_SUFFIX, "viewers");
+		String topOrBottom = prefs.getString(currentChartName+SCORE_TYPE_OPTION_SUFFIX, "top");
+		int num = prefs.getInt(currentChartName+SCORE_NUM_OPTION_SUFFIX, 5);
+		
+		return new StringBuilder(viewersOrDuration).
+				append(",").append(topOrBottom.equals("bottom") ? "low" : "top").
+				append(",").append(num).toString();
 	}
 }

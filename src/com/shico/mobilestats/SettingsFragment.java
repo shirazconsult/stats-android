@@ -13,14 +13,14 @@ public class SettingsFragment extends PreferenceFragment {
 		super.onCreate(savedInstanceState);
 		addPreferencesFromResource(R.xml.preferences);
 		
-		Preference resetDialog = getPreferenceScreen().findPreference("resetDialog");
-		resetDialog.setOnPreferenceChangeListener(new OnPreferenceChangeListener() {			
-			@Override
-			public boolean onPreferenceChange(Preference preference, Object newValue) {
-				restartThis();
-				return false;
-			}
-		});
+//		Preference settingsDialog = getPreferenceScreen().findPreference("global_settings");
+//		settingsDialog.setOnPreferenceChangeListener(new OnPreferenceChangeListener() {			
+//			@Override
+//			public boolean onPreferenceChange(Preference preference, Object newValue) {
+//				restartThis();				
+//				return false;
+//			}
+//		});
 	}
 
 	private void restartThis() {

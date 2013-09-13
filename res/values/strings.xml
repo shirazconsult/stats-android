@@ -24,12 +24,15 @@
     <!-- Preferences -->
     <!-- ########### -->
     <string name="global_settings_title">Global Settings</string>
+    <string name="server_settings_title">Server Settings</string>
     <string name="server_addr_dialog_title">Server Address</string>
     <string name="server_addr_title">Host Name/IP</string>
     <string name="server_addr_sum">Name or IP address of the statistics REST service</string>
-    <string name="server_port_dialog_title">Host Name/IP"</string>
+    <string name="server_port_dialog_title">Server Port</string>
     <string name="server_port_title">Port</string>
     <string name="server_port_sum">Port number of the statistics REST service</string>
+    <string name="user_id">User name</string>
+    <string name="user_pwd">Password</string>
     <string name="chart_settings_title">Default Chart Settings</string>
     <string name="y_axis_title">Y Axis</string>
     <string name="y_axis_sum">Whether data should be retrieved based on the number of viewers or the total usage time</string>
@@ -68,4 +71,5 @@
     <!-- ####### -->
     <string name="fetch">Fetch</string>
     <string name="cancel">Cancel</string>
+    <string name="save">Save</string>
 </resources>
