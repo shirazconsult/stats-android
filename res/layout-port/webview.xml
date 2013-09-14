@@ -2,25 +2,21 @@
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:weightSum="8"
     android:dividerPadding="20dp"
     android:orientation="vertical">    
     
 	<WebView
 	    android:id="@+id/webview"
 	    android:layout_width="match_parent"
-	    android:layout_height="wrap_content"
-	    android:layout_gravity="top"	    
-	    android:layout_weight="5" />
-	
-	<TableLayout
-	    android:id="@+id/chart_table"
-	    android:layout_height="wrap_content"
-	    android:layout_width="match_parent"
-	    android:stretchColumns="true"
-	    android:layout_gravity="bottom"
-	    android:paddingLeft="10dp"
-	    android:paddingRight="10dp"  
-	    android:layout_weight="3" />
+	    android:layout_height="0dp"
+	    android:layout_gravity="top"
+	    android:layout_weight="1" />
+
+	<ListView 
+    	android:id="@+id/groupped_data_list"
+    	android:layout_width="match_parent"
+    	android:paddingTop="20dp"
+    	android:paddingBottom="20dp"
+    	android:layout_height="300dp"/>
 	
 </LinearLayout>

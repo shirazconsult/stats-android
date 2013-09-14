@@ -1,7 +1,9 @@
 <html>
   <head>
-    <script type="text/javascript" src="https://www.google.com/jsapi"></script>
+    <script type="text/javascript" src="jsapi.js"></script>
     <script type="text/javascript">
+    	google.load("visualization", "1", {packages:["corechart"]});
+	    
 	function getNativeLiveUsageColumnChartView(data, vaxisIdx){
 		var dt = new google.visualization.DataTable();
 		var time = data.getValue(0, 5);  // 5 = time index
@@ -52,10 +54,8 @@
 		
 		return dt;		
 	}      
-    </script>    
-    <script type="text/javascript">
-      google.load("visualization", "1", {packages:["corechart"]});
-      function drawChart() {
+
+	  function drawChart(){
 		var chart = new google.visualization.ColumnChart(document.getElementById('chart_div'));
 
       	var options = JSON.parse(LiveUsageChartDataLoader.getOptions());
@@ -84,6 +84,13 @@
 	    	}
 		}
 	}      
+
+	function loadgviz(){
+      		console.log('LOADING VISUALIZATION ........');
+	      google.load("visualization", "1", {packages:["corechart"]});
+      		console.log('setting callback on draw ........');
+	}
+	
     </script>
   </head>
   <body>

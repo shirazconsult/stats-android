@@ -18,8 +18,8 @@
     </style>
 
     <style name="DialogAnimation">
-        <item name="android:windowEnterAnimation">@anim/slide_up_dialog</item>
-        <item name="android:windowExitAnimation">@anim/slide_out_down</item>
+        <item name="android:windowEnterAnimation">@anim/slide_down_dialog</item>
+        <item name="android:windowExitAnimation">@anim/slide_out_up</item>
 		<item name="android:windowBackground">@null</item> 
 		<item name="android:windowFrame">@null</item> 
 		<item name="android:gravity">bottom</item>

@@ -1,8 +1,6 @@
 package com.shico.mobilestats;
 
-import org.json.JSONArray;
 import org.json.JSONException;
-import org.json.JSONObject;
 
 import android.annotation.SuppressLint;
 import android.app.Fragment;
@@ -13,7 +11,6 @@ import android.content.IntentFilter;
 import android.content.SharedPreferences;
 import android.content.SharedPreferences.OnSharedPreferenceChangeListener;
 import android.content.res.Configuration;
-import android.graphics.Color;
 import android.os.Bundle;
 import android.preference.PreferenceManager;
 import android.support.v4.content.LocalBroadcastManager;
@@ -27,15 +24,12 @@ import android.view.ViewGroup;
 import android.webkit.WebChromeClient;
 import android.webkit.WebView;
 import android.webkit.WebViewClient;
-import android.widget.TableLayout;
-import android.widget.TableRow;
-import android.widget.TableRow.LayoutParams;
-import android.widget.TextView;
+import android.widget.ListView;
 import android.widget.Toast;
 
 import com.shico.mobilestats.WebViewFragment.MyWebClient.EventReceiver;
+import com.shico.mobilestats.adapters.GrouppedDataListAdapter;
 import com.shico.mobilestats.event.ChartEvent;
-import com.shico.mobilestats.loaders.ChartDataLoader;
 import com.shico.mobilestats.loaders.LiveUsageChartDataLoader;
 
 public class WebViewFragment extends Fragment implements OnSharedPreferenceChangeListener{
@@ -139,10 +133,11 @@ public class WebViewFragment extends Fragment implements OnSharedPreferenceChang
 					result = true;
 				} else if (velocityY > swipe_Min_Velocity
 						&& yDistance > swipe_Min_Distance) {
-					if ((e1.getY() > metrics.heightPixels - 200) &&  e1.getY() > e2.getY()){ // bottom to up
-						showSettings();
-					}else{
+					if (e1.getY() > e2.getY()){
+						// swipe up
+					}else if(e1.getY() < 200){
 						// swipe down
+						showSettings();
 					}
 					result = true;
 				}
@@ -211,7 +206,7 @@ public class WebViewFragment extends Fragment implements OnSharedPreferenceChang
 					
 					// table
 					if(isPortrait()){
-						displayDataTable(context);
+						displayDataList(context);
 					}
 				}
 			}
@@ -274,82 +269,18 @@ public class WebViewFragment extends Fragment implements OnSharedPreferenceChang
 	
 	// Table
 	// ############
-	private LayoutParams tableRowLayoutParams = null;
-	private void displayDataTable(Context context){
-		TableLayout table = (TableLayout) getActivity().findViewById(R.id.chart_table);
+	private void displayDataList(Context context){
+		ListView lv = (ListView)getActivity().findViewById(R.id.groupped_data_list);
+		GrouppedDataListAdapter lvAdapter;
 		try {
-			JSONObject jsonTable = liveUsageChartDataLoader.getDataTable();
-			JSONArray rows = jsonTable.getJSONArray("rows");
-
-			table.removeAllViews();
-			// header
-			tableRowLayoutParams = (isPortrait() 
-					? new LayoutParams(LayoutParams.MATCH_PARENT, LayoutParams.WRAP_CONTENT)
-					: new LayoutParams(LayoutParams.WRAP_CONTENT, LayoutParams.MATCH_PARENT));
-			table.addView(buildHeader(context)); 
-	        			
-			// rows
-			for(int i=0; i<rows.length(); i++) {
-				table.addView(buildRow(context, i, rows.getJSONArray(i)));
-			}
-			
-			if(isPortrait()){
-				table.setColumnStretchable(0, true);
-			}
+			lvAdapter = new GrouppedDataListAdapter(getActivity(), liveUsageChartDataLoader.getDataRows());
+			lv.setAdapter(lvAdapter);
 		} catch (JSONException e) {
-			Log.e("Failed to retrieve datatable object from liveUsageChartDataLoader.", e.getMessage());
-			Toast.makeText(context, "Error in displaying data as table.", Toast.LENGTH_SHORT).show();
-			return;						
+			Toast.makeText(getActivity(), "Failed to retrieve table data.", Toast.LENGTH_LONG).show();
+			return;
 		}
+	}
 		
-	}
-	
-	private TableRow buildHeader(Context ctx){
-		TableRow header = new TableRow(ctx);
-		header.setId(10);
-		header.setBackgroundColor(Color.GRAY);
-		header.setLayoutParams(tableRowLayoutParams);
-		
-		header.addView(buildTextView(ctx, 0, "Name"));
-		header.addView(buildTextView(ctx, 1, "Viewers"));
-		header.addView(buildTextView(ctx, 2, "Duration"));
-		header.addView(buildTextView(ctx, 3, "Time"));
-		
-		return header;
-	}
-
-	private TableRow buildRow(Context ctx, int rowNum, JSONArray jsonRow) throws JSONException{
-		TableRow row = new TableRow(ctx);
-		int rowId = (rowNum+1)*10;
-		row.setId(rowId);
-		if(rowNum % 2 != 0){
-			row.setBackgroundColor(Color.GRAY);
-		}
-		row.setLayoutParams(tableRowLayoutParams);
-
-		row.addView(buildTextView(ctx, rowId+1, jsonRow.getString(ChartDataLoader.nameIdx)));
-		row.addView(buildTextView(ctx, rowId+2, jsonRow.getString(ChartDataLoader.viewersIdx)));
-		try{
-			long duration = jsonRow.getLong(ChartDataLoader.durationIdx);
-			row.addView(buildTextView(ctx, rowId+3, duration/60000+" min."));
-		}catch(JSONException e){			
-			row.addView(buildTextView(ctx, rowId+3, ""));
-		}
-		row.addView(buildTextView(ctx, rowId+4, jsonRow.getString(ChartDataLoader.timeIdx)));
-
-		return row;
-	}
-	
-	private TextView buildTextView(Context ctx, int id, String value){
-		TextView tv = new TextView(ctx);
-        tv.setId(0);
-        tv.setText(value);
-        tv.setTextColor(Color.BLACK);
-        tv.setPadding(20, 5, 20, 5);
-        
-        return tv;
-	}
-	
 	private boolean isPortrait(){
 		return getResources().getConfiguration().orientation == Configuration.ORIENTATION_PORTRAIT;
 	}

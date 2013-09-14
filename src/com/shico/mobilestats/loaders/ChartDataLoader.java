@@ -1,6 +1,8 @@
 package com.shico.mobilestats.loaders;
 
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 import org.json.JSONArray;
@@ -16,7 +18,6 @@ import android.util.Log;
 
 import com.loopj.android.http.AsyncHttpClient;
 import com.loopj.android.http.JsonHttpResponseHandler;
-import com.shico.mobilestats.R;
 import com.shico.mobilestats.event.ChartEvent;
 
 public abstract class ChartDataLoader {
@@ -60,6 +61,7 @@ public abstract class ChartDataLoader {
 	}
 	
 	Map<String, JSONObject> temporaryCache = new HashMap<String, JSONObject>();
+	List<List<Object>> temporaryRowCache = null;
 	
 	public void getTopView(String restCmd, String from, String to, String options){
 		String url = new StringBuilder(getBaseUrl()).
@@ -112,6 +114,7 @@ public abstract class ChartDataLoader {
 							getDataTable().getJSONArray("rows").put(rownum++, row.getJSONObject(j).getJSONArray("result"));
 						}
 						temporaryCache.put(url, getDataTable());
+						temporaryRowCache = null;
 					}
 				} catch (JSONException e) {
 					sendBroadcast(ChartEvent.FAILURE);
@@ -142,6 +145,7 @@ public abstract class ChartDataLoader {
 						getDataTable().getJSONArray("rows").put(row);
 					}
 					temporaryCache.put(url, getDataTable());
+					temporaryRowCache = null;
 				} catch (JSONException e) {
 					sendBroadcast(ChartEvent.FAILURE);
 					return;
@@ -163,14 +167,24 @@ public abstract class ChartDataLoader {
 		LocalBroadcastManager.getInstance(context).sendBroadcast(intent);
 	}
 	
-	private String getLiveUsageUrl(String from, String to){
-		return new StringBuilder(getBaseUrl()).
-				append("/view/LiveUsage/").
-				append(from).append("/").append(to).
-				append("/viewers,top,10").
-				toString();
+	public List<List<Object>> getDataRows() throws JSONException{
+		if(temporaryRowCache == null){
+			temporaryRowCache = new ArrayList<List<Object>>();
+			
+			JSONArray rows = getDataTable().getJSONArray("rows");
+			for(int i=0; i<rows.length(); i++){
+				List<Object> cacheRow = new ArrayList<Object>();
+				JSONArray row = rows.getJSONArray(i);
+				cacheRow.add(row.getString(nameIdx));
+				cacheRow.add(row.getString(timeIdx));
+				cacheRow.add(row.getInt(viewersIdx));
+				cacheRow.add(row.getLong(durationIdx));
+				
+				temporaryRowCache.add(cacheRow);
+			}			
+		}
+		return temporaryRowCache;
 	}
-	
 	protected static JSONArray buildTopViewColumns() throws JSONException{
 		JSONArray cols = new JSONArray();
 		cols.put(typeIdx, newColumn(topViewColumnNames[typeIdx], "string"));

@@ -71,7 +71,7 @@ public class ChartSettingsDialogFragment extends DialogFragment {
 		
 		AlertDialog dialog = builder.create();
 		LayoutParams params = dialog.getWindow().getAttributes();
-		params.gravity = Gravity.BOTTOM | Gravity.CENTER;
+		params.gravity = Gravity.TOP | Gravity.CENTER;
 				
 		return dialog;
 	}
