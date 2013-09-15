@@ -1,0 +1,23 @@
+<resources>
+
+    <!--
+         Customize dimensions originally defined in res/values/dimens.xml (such as
+         screen margins) for sw600dp devices (e.g. 7" tablets) here.
+    -->
+    
+    <!-- datalist -->
+	<dimen name="datalistHeight">180dp</dimen>
+	<dimen name="datalistPaddingTop">10dp</dimen>    
+	<dimen name="datalistPaddingBottom">10dp</dimen>
+	<dimen name="datalistTextSizeLarge">10sp</dimen>
+	<dimen name="datalistTextSizeSmall">8sp</dimen>
+	<dimen name="datalistTextPadding">12dp</dimen>
+	<dimen name="datalistItemHeight">25dp</dimen>
+	
+	<!-- main menu -->
+	<dimen name="menuFontSizeLarge">12sp</dimen>
+	<dimen name="menuFontSizeSmall">8sp</dimen>
+	<dimen name="menuTextHeightMin">8dp</dimen>
+	<dimen name="menuItemPaddingLarge">6dp</dimen>
+	<dimen name="menuItemPaddingSmall">4dp</dimen>
+</resources>
