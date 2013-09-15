@@ -170,11 +170,35 @@ public final class R {
         /**  Default screen margins, per the Android Design guidelines. 
 
          Customize dimensions originally defined in res/values/dimens.xml (such as
-         screen margins) for sw720dp devices (e.g. 10" tablets) in landscape here.
+         screen margins) for sw600dp devices (e.g. 7" tablets) here.
     
          */
         public static final int activity_horizontal_margin=0x7f070000;
         public static final int activity_vertical_margin=0x7f070001;
+        /**  datalist 
+
+         Customize dimensions originally defined in res/values/dimens.xml (such as
+         screen margins) for sw600dp devices (e.g. 7" tablets) here.
+    
+ datalist 
+ datalist 
+         */
+        public static final int datalistHeight=0x7f070002;
+        public static final int datalistItemHeight=0x7f070007;
+        public static final int datalistPaddingBottom=0x7f070004;
+        public static final int datalistPaddingTop=0x7f070003;
+        public static final int datalistTextPadding=0x7f07000d;
+        public static final int datalistTextSizeLarge=0x7f070005;
+        public static final int datalistTextSizeSmall=0x7f070006;
+        /**  main menu 
+ main menu 
+ main menu 
+         */
+        public static final int menuFontSizeLarge=0x7f070008;
+        public static final int menuFontSizeSmall=0x7f070009;
+        public static final int menuItemPaddingLarge=0x7f07000b;
+        public static final int menuItemPaddingSmall=0x7f07000c;
+        public static final int menuTextHeightMin=0x7f07000a;
     }
     public static final class drawable {
         public static final int action_search=0x7f020000;

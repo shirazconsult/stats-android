@@ -15,8 +15,8 @@
 	<ListView 
     	android:id="@+id/groupped_data_list"
     	android:layout_width="match_parent"
-    	android:paddingTop="20dp"
-    	android:paddingBottom="20dp"
-    	android:layout_height="300dp"/>
+    	android:paddingTop="@dimen/datalistPaddingTop"
+    	android:paddingBottom="@dimen/datalistPaddingBottom"
+    	android:layout_height="@dimen/datalistHeight"/>
 	
 </LinearLayout>

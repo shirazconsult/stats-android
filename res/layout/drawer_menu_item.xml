@@ -1,19 +1,18 @@
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
-    android:layout_width="match_parent"
-    android:layout_height="match_parent"
-    android:orientation="vertical"
-    android:padding="10dp" >
+    android:layout_width="wrap_content"
+    android:layout_height="wrap_content"
+    android:orientation="vertical" 
+    android:padding="@dimen/menuItemPaddingLarge">
  
     <TextView
         android:id="@+id/drawer_menu_item"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
     	android:gravity="center_vertical"
-	    android:paddingLeft="32dp"
+	    android:paddingLeft="26dp"
     	android:paddingRight="16dp"
-	    android:textColor="#fff"
-	    android:textSize="20sp"
+	    android:textColor="@color/White"
+	    android:textSize="@dimen/menuFontSizeLarge"
 	    android:textAppearance="?android:attr/textAppearanceListItemSmall"
-    	android:background="?android:attr/activatedBackgroundIndicator"
-    	android:minHeight="16dp"/>
+    	android:background="?android:attr/activatedBackgroundIndicator"	/>
 </LinearLayout>

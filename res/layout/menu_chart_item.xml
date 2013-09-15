@@ -1,7 +1,7 @@
 <RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
-    android:layout_height="wrap_content"
-    android:padding="10dp" >
+    android:layout_height="wrap_content" 
+    android:padding="@dimen/menuItemPaddingSmall">
  
     <TextView
         android:id="@+id/chart_menu_item"
@@ -9,11 +9,10 @@
         android:layout_height="wrap_content"
         android:layout_alignParentLeft="true"
         android:layout_centerVertical="true"
-        android:paddingLeft="50dp"
-	    android:textColor="#fff"
-	    android:textSize="15sp"
+        android:paddingLeft="42dp"
+	    android:textColor="@color/White"
+	    android:textSize="@dimen/menuFontSizeSmall"
 	    android:textAppearance="?android:attr/textAppearanceListItemSmall"
-    	android:background="?android:attr/activatedBackgroundIndicator"
-    	android:minHeight="12dp"/>
+    	android:background="?android:attr/activatedBackgroundIndicator" />
     
 </RelativeLayout>

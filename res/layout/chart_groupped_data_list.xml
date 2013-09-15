@@ -1,36 +1,39 @@
 <RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
-    android:layout_height="?android:attr/listPreferredItemHeightSmall" >
+    android:layout_height="@dimen/datalistItemHeight">
 
     <TextView
         android:id="@+id/event_name"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_alignParentLeft="true"
-        android:paddingLeft="20dp"
+        android:paddingLeft="@dimen/datalistTextPadding"
         android:ellipsize="marquee"
         android:singleLine="true"
-        android:textStyle="bold"  />
+        android:textStyle="bold"
+		android:textSize="@dimen/datalistTextSizeLarge"/>        
 
-    <TextView
+   <TextView
         android:id="@+id/event_time"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_alignParentRight="true"
-        android:paddingRight="20dp"
+        android:paddingRight="@dimen/datalistTextPadding"
         android:ellipsize="marquee"
         android:singleLine="true"
-        android:textStyle="bold"/>
+        android:textStyle="bold"
+        android:textSize="@dimen/datalistTextSizeLarge"/>
+    
     <TextView
         android:id="@+id/viewers"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_alignParentLeft="true"
         android:layout_alignParentBottom="true"
-        android:paddingLeft="20dp"        
+        android:paddingLeft="@dimen/datalistTextPadding"        
         android:ellipsize="marquee"
         android:singleLine="true"
-        android:textSize="12sp" />
+        android:textSize="@dimen/datalistTextSizeSmall" />
 
     <TextView
         android:id="@+id/duration"
@@ -38,8 +41,8 @@
         android:layout_height="wrap_content"
         android:layout_alignParentRight="true"
         android:layout_alignParentBottom="true"
-        android:paddingRight="20dp"        
+        android:paddingRight="@dimen/datalistTextPadding"        
         android:ellipsize="marquee"
         android:singleLine="true"
-        android:textSize="12sp" />
+        android:textSize="@dimen/datalistTextSizeSmall" />
 </RelativeLayout> 

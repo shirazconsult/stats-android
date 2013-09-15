@@ -1,7 +1,21 @@
 <resources>
 
     <!-- Default screen margins, per the Android Design guidelines. -->
-    <dimen name="activity_horizontal_margin">16dp</dimen>
-    <dimen name="activity_vertical_margin">16dp</dimen>
-
+    <dimen name="activity_horizontal_margin">10dp</dimen>
+    <dimen name="activity_vertical_margin">10dp</dimen>
+    
+    <!-- datalist -->
+	<dimen name="datalistHeight">300dp</dimen>
+	<dimen name="datalistPaddingTop">20dp</dimen>    
+	<dimen name="datalistPaddingBottom">20dp</dimen>
+	<dimen name="datalistTextSizeLarge">14sp</dimen>
+	<dimen name="datalistTextSizeSmall">12sp</dimen>
+	<dimen name="datalistItemHeight">36dp</dimen>
+	
+	<!-- main menu -->
+	<dimen name="menuFontSizeLarge">18sp</dimen>
+	<dimen name="menuFontSizeSmall">14sp</dimen>
+	<dimen name="menuTextHeightMin">10dp</dimen>
+	<dimen name="menuItemPaddingLarge">8dp</dimen>
+	<dimen name="menuItemPaddingSmall">6dp</dimen>
 </resources>
