@@ -1,4 +1,9 @@
-package com.shico.mobilestats;
+package com.shico.mobilestats.adapters;
+
+import com.shico.mobilestats.R;
+import com.shico.mobilestats.R.array;
+import com.shico.mobilestats.R.id;
+import com.shico.mobilestats.R.layout;
 
 import android.app.Activity;
 import android.content.Context;

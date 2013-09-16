@@ -1,4 +1,4 @@
-package com.shico.mobilestats;
+package com.shico.mobilestats.settings;
 
 import android.content.Context;
 import android.content.DialogInterface;
@@ -7,6 +7,8 @@ import android.preference.PreferenceManager;
 import android.util.AttributeSet;
 import android.view.View;
 import android.widget.Toast;
+
+import com.shico.mobilestats.R;
 
 public class GlobalSettingsDialogPreference extends DialogPreference {
 	protected Context context;

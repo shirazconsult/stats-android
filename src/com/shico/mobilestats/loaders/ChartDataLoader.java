@@ -47,7 +47,7 @@ public abstract class ChartDataLoader {
 	private String host;
 	private int port;
 	
-	private JSONObject currentDataTable;
+	protected JSONObject currentDataTable;
 
 	protected abstract String getIntentAction();
 

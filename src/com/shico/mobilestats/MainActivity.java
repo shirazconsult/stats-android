@@ -1,5 +1,8 @@
 package com.shico.mobilestats;
 
+import com.shico.mobilestats.adapters.MenuAdapter;
+import com.shico.mobilestats.settings.SettingsFragment;
+
 import android.app.Activity;
 import android.app.Fragment;
 import android.app.FragmentManager;
@@ -13,6 +16,7 @@ import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
 import android.widget.ExpandableListView;
+import android.widget.Toast;
 
 public class MainActivity extends Activity {
 	public final static String ARG_MENU_ITEM_IDX = "menu.item.idx";
@@ -115,7 +119,15 @@ public class MainActivity extends Activity {
 			args.putInt(ARG_MENU_ITEM_IDX, groupPosition);
 			args.putString(ARG_MENU_CHART_ITEM_NAME, chartName);
 			
-			setFragment(args, new WebViewFragment());
+			if(chartName.equalsIgnoreCase("channels")){				
+				setFragment(args, new LiveUsageWebViewFragment());
+			}else if(chartName.equalsIgnoreCase("movies")){
+				Toast.makeText(MainActivity.this, "No view for "+chartName+" is implemented yet.", Toast.LENGTH_LONG);
+			}else if(chartName.equalsIgnoreCase("programs")){
+				Toast.makeText(MainActivity.this, "No view for "+chartName+" is implemented yet.", Toast.LENGTH_LONG);				
+			}else if(chartName.equalsIgnoreCase("widgets")){
+				Toast.makeText(MainActivity.this, "No view for "+chartName+" is implemented yet.", Toast.LENGTH_LONG);
+			}
 
 			// update selected item and title, then close the drawer
 			mMenuDrawer.setItemChecked(childPosition + groupPosition + 1, true);
@@ -147,12 +159,12 @@ public class MainActivity extends Activity {
 			case MenuAdapter.HELP_MENU_IDX:
 				args.putString("temp.html",
 						"<html><body><h1>Here comes Help/Manual info.</h1></body></html>");
-				fragment = new WebViewFragment();
+//				fragment = new WebViewFragment();
 				break;
 			case MenuAdapter.ABOUT_MENU_IDX:
 				args.putString("temp.html",
 						"<html><body><h1>Here comes About info.</h1></body></html>");
-				fragment = new WebViewFragment();
+//				fragment = new WebViewFragment();
 				break;
 			default:
 				throw new IllegalArgumentException("No such menu item.");

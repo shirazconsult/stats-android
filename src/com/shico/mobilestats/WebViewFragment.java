@@ -31,9 +31,10 @@ import android.widget.Toast;
 import com.shico.mobilestats.WebViewFragment.MyWebClient.EventReceiver;
 import com.shico.mobilestats.adapters.GrouppedDataListAdapter;
 import com.shico.mobilestats.event.ChartEvent;
-import com.shico.mobilestats.loaders.LiveUsageChartDataLoader;
+import com.shico.mobilestats.loaders.ChartDataLoader;
+import com.shico.mobilestats.settings.ChartSettingsDialogFragment;
 
-public class WebViewFragment extends Fragment implements OnSharedPreferenceChangeListener{
+public abstract class WebViewFragment extends Fragment implements OnSharedPreferenceChangeListener{
 	public static final String ARG_CHART_ID = "chart_id";
 	public static final String ARG_CHART_URL = "chart_url";
 	public static final String CHART_NAME = "chart_name";
@@ -43,33 +44,28 @@ public class WebViewFragment extends Fragment implements OnSharedPreferenceChang
 	public static final String SCORE_NUM_OPTION_SUFFIX = ".scoreNum";
 	public static final String SCORE_TYPE_OPTION_SUFFIX = ".scoreType";
 	
-	private String currentURL;
-	private LiveUsageChartDataLoader liveUsageChartDataLoader; 
-	private MyWebClient myWebClient; 
-	private WebView thisWebView;
+	protected String currentURL;
+	protected MyWebClient myWebClient; 
+	protected WebView thisWebView;
 	private DisplayMetrics metrics;
-	private String currentChartName;
-	private String currentChartOptions;
+	protected String currentChartName;
+	protected String currentChartOptions;
 	private ProgressDialog progressDiag;
-		
+
+	protected abstract ChartDataLoader getChartDataLoader();
+	protected abstract void addJavascriptInterface(WebView view);
+	protected abstract String getColumnChartViewHtml();
+	protected abstract String getChartEventType();
 	
 	@Override
 	public void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
-		try {
-			myWebClient = new MyWebClient();
-			liveUsageChartDataLoader = new LiveUsageChartDataLoader(getActivity());
-			if(savedInstanceState != null){
-				currentChartName = savedInstanceState.getString(CHART_NAME);
-				currentChartOptions = savedInstanceState.getString(CHART_OPTIONS);
-				currentURL = savedInstanceState.getString(ARG_CHART_URL);
-				liveUsageChartDataLoader.onRestoreInstanceState(savedInstanceState);
-			}
-		} catch (JSONException e) {
-			Log.e("WebViewFragment", "Failed to instantiate LiveUsageChartDataLoader.");
-			Toast.makeText(getActivity(), "Failed to instantiate LiveUsageChartDataLoader.", Toast.LENGTH_SHORT).show();
-		}
-		
+		myWebClient = new MyWebClient();
+		if(savedInstanceState != null){
+			currentChartName = savedInstanceState.getString(CHART_NAME);
+			currentChartOptions = savedInstanceState.getString(CHART_OPTIONS);
+			currentURL = savedInstanceState.getString(ARG_CHART_URL);
+		}		
 	}
 
 	@Override
@@ -77,9 +73,7 @@ public class WebViewFragment extends Fragment implements OnSharedPreferenceChang
 		super.onSaveInstanceState(outState);
 		outState.putString(CHART_NAME, currentChartName);
 		outState.putString(CHART_OPTIONS, currentChartOptions);
-		outState.putString(ARG_CHART_URL, currentURL);
-		
-		liveUsageChartDataLoader.onSaveInstanceState(outState);
+		outState.putString(ARG_CHART_URL, currentURL);		
 	}
 
 	@SuppressLint("SetJavaScriptEnabled")
@@ -92,25 +86,14 @@ public class WebViewFragment extends Fragment implements OnSharedPreferenceChang
 		thisWebView.getSettings().setJavaScriptEnabled(true);
 		thisWebView.setWebViewClient(myWebClient);
 		thisWebView.setWebChromeClient(new WebChromeClient());
-		thisWebView.addJavascriptInterface(liveUsageChartDataLoader, "LiveUsageChartDataLoader");
+		addJavascriptInterface(thisWebView);
 		
 		setGestureListener(v, thisWebView);
 		
-		int idx = getArguments().getInt(MainActivity.ARG_MENU_ITEM_IDX);
-		switch (idx) {
-		case MenuAdapter.CHARTS_MENU_IDX:
-			currentChartName = getArguments().getString(MainActivity.ARG_MENU_CHART_ITEM_NAME);
-			updateCurrentChartOptions(PreferenceManager.getDefaultSharedPreferences(getActivity()));
-			if(currentChartName != null){
-				loadChartView();
-			}
-			break;
-		case MenuAdapter.HELP_MENU_IDX:
-		case MenuAdapter.ABOUT_MENU_IDX:
-			thisWebView.loadData(getArguments().getString("temp.html"), "text/html", null);
-			break;
-		default:
-			throw new IllegalArgumentException("No webview for menu item idex: " + idx);
+		currentChartName = getArguments().getString(MainActivity.ARG_MENU_CHART_ITEM_NAME);
+		updateCurrentChartOptions(PreferenceManager.getDefaultSharedPreferences(getActivity()));
+		if(currentChartName != null){
+			loadChartView();
 		}
 		
 		// Get display metrics
@@ -212,7 +195,7 @@ public class WebViewFragment extends Fragment implements OnSharedPreferenceChang
 			if(progressDiag != null){
 				progressDiag.setMessage("Loading statistics data...");
 			}
-			liveUsageChartDataLoader.getTopViewInBatch("/viewbatch/LiveUsage", "2013-02", "2013-05", currentChartOptions);			
+			getChartDataLoader().getTopViewInBatch("/viewbatch/"+getChartEventType(), "2013-02", "2013-05", currentChartOptions);			
 		}
 		
 		// Broadcast receiver
@@ -281,13 +264,6 @@ public class WebViewFragment extends Fragment implements OnSharedPreferenceChang
 
 	}
 
-	static class LiveUsageEventReciever extends BroadcastReceiver {
-		@Override
-		public void onReceive(Context context, Intent intent) {
-			
-		}
-	}
-
 	private ChartSettingsDialogFragment chartSettingsDialog;
 	private void showSettings(){
 		if(chartSettingsDialog == null){
@@ -299,13 +275,11 @@ public class WebViewFragment extends Fragment implements OnSharedPreferenceChang
 		chartSettingsDialog.show(getFragmentManager(), "test");
 	}
 	
-	// Table
-	// ############
 	private void displayDataList(Context context){
 		ListView lv = (ListView)getActivity().findViewById(R.id.groupped_data_list);
 		GrouppedDataListAdapter lvAdapter;
 		try {
-			lvAdapter = new GrouppedDataListAdapter(getActivity(), liveUsageChartDataLoader.getDataRows());
+			lvAdapter = new GrouppedDataListAdapter(getActivity(), getChartDataLoader().getDataRows());
 			lv.setAdapter(lvAdapter);
 		} catch (JSONException e) {
 			Toast.makeText(getActivity(), "Failed to retrieve table data.", Toast.LENGTH_LONG).show();
@@ -327,9 +301,9 @@ public class WebViewFragment extends Fragment implements OnSharedPreferenceChang
 		if(key.equals("host") || key.equals("port")){
 			String host = sharedPreferences.getString("host", "localhost");
 			int port = sharedPreferences.getInt("port", 9119);
-			if(liveUsageChartDataLoader != null){
-				liveUsageChartDataLoader.setHost(host);
-				liveUsageChartDataLoader.setPort(port);
+			if(getChartDataLoader() != null){
+				getChartDataLoader().setHost(host);
+				getChartDataLoader().setPort(port);
 			}
 		}
 	}
@@ -351,6 +325,6 @@ public class WebViewFragment extends Fragment implements OnSharedPreferenceChang
 		progressDiag = new ProgressDialog(getActivity(), ProgressDialog.STYLE_HORIZONTAL); 
 		progressDiag.setMessage("Loading chart library ...");
 		progressDiag.show();
-		thisWebView.loadUrl("file:///android_asset/LiveUsage.html");
+		thisWebView.loadUrl("file:///android_asset/"+getColumnChartViewHtml());
 	}
 }

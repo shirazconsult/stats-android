@@ -1,4 +1,4 @@
-package com.shico.mobilestats;
+package com.shico.mobilestats.settings;
 
 import android.app.AlertDialog;
 import android.app.Dialog;
@@ -13,6 +13,9 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.WindowManager.LayoutParams;
 import android.widget.RadioGroup;
+
+import com.shico.mobilestats.R;
+import com.shico.mobilestats.WebViewFragment;
 
 public class ChartSettingsDialogFragment extends DialogFragment {
 	public final static String DEFAULT_Y_AXIS_OPTION = "viewers";
