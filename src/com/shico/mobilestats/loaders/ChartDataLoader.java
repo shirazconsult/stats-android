@@ -1,9 +1,11 @@
 package com.shico.mobilestats.loaders;
 
+import java.io.Serializable;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
 
 import org.json.JSONArray;
 import org.json.JSONException;
@@ -12,6 +14,7 @@ import org.json.JSONObject;
 import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
+import android.os.Bundle;
 import android.preference.PreferenceManager;
 import android.support.v4.content.LocalBroadcastManager;
 import android.util.Log;
@@ -21,6 +24,9 @@ import com.loopj.android.http.JsonHttpResponseHandler;
 import com.shico.mobilestats.event.ChartEvent;
 
 public abstract class ChartDataLoader {
+	private static final String CHART_CACHE = "chart_cache";
+	private static final String CHART_DATA = "chart_data";
+	
 	// data index constants
 	public final static int typeIdx = 0; 
 	public final static int nameIdx = 1; 
@@ -41,6 +47,10 @@ public abstract class ChartDataLoader {
 	private String host;
 	private int port;
 	
+	private JSONObject currentDataTable;
+
+	protected abstract String getIntentAction();
+
 	public ChartDataLoader(Context context) throws JSONException {
 		this.context = context;
 		if(topViewColumns == null){
@@ -51,6 +61,12 @@ public abstract class ChartDataLoader {
 		port = Integer.parseInt(prefs.getString("port", "9118"));
 	}
 	
+	public void onSaveInstanceState(Bundle outState) {
+		outState.putSerializable(CHART_CACHE, (Serializable)getTemporaryCache());
+	}
+	public void onRestoreInstanceState(Bundle inState){
+		setTemporaryCache((ConcurrentMap<String, JSONObject>) inState.get(CHART_CACHE));
+	}
 	private static JSONObject newColumn(String name, String type) throws JSONException{
 		JSONObject col = new JSONObject();
 		col.put("id", name);
@@ -59,25 +75,23 @@ public abstract class ChartDataLoader {
 		
 		return col;
 	}
-	
-	Map<String, JSONObject> temporaryCache = new HashMap<String, JSONObject>();
-	List<List<Object>> temporaryRowCache = null;
-	
-	public void getTopView(String restCmd, String from, String to, String options){
-		String url = new StringBuilder(getBaseUrl()).
-				append(restCmd).
-				append("/").append(from).
-				append("/").append(to).
-				append("/").append(options).
-				toString();
 		
-		JSONObject cached = temporaryCache.get(url);
-		if(cached == null){
-			loadChartTopViewData(url);
-		}else{
-			sendBroadcast(ChartEvent.SUCCESS);
-		}
-	}
+//	public void getTopView(String restCmd, String from, String to, String options){
+//		String url = new StringBuilder(getBaseUrl()).
+//				append(restCmd).
+//				append("/").append(from).
+//				append("/").append(to).
+//				append("/").append(options).
+//				toString();
+//		
+//		JSONObject cached = getTemporaryCache().get(url);
+//		if(cached == null){
+//			loadChartTopViewData(url);
+//		}else{
+//			setCurrentDataTable(getTemporaryCache().get(url));
+//			sendBroadcast(ChartEvent.SUCCESS);
+//		}
+//	}
 
 	public void getTopViewInBatch(String restCmd, String from, String to, String options){
 		String url = new StringBuilder(getBaseUrl()).
@@ -87,35 +101,35 @@ public abstract class ChartDataLoader {
 				append("/").append(options).
 				toString();
 		
-		JSONObject cached = temporaryCache.get(url);
+		JSONObject cached = getTemporaryCache().get(url);
 		if(cached == null){
+			Log.d("ChartDataLoader", "Loading data from server: "+url);
 			loadChartTopViewDataInBatch(url);
 		}else{
+			currentDataTable = getTemporaryCache().get(url);
+			Log.d("ChartDataLoader", "Loading data from cache: "+url);
 			sendBroadcast(ChartEvent.SUCCESS);
 		}
 	}
 
-	public abstract JSONObject getDataTable() throws JSONException;
-	protected abstract String getIntentAction();
-		
 	public void loadChartTopViewDataInBatch(final String url){
 		client.get(url, new JsonHttpResponseHandler(){
 			@Override
 			public void onSuccess(JSONObject res) {
 				try {
-					// empty the datatable rows
-					getDataTable().put("rows", new JSONArray());
+					JSONObject newDataTable = newBatchDataTable();
 
 					JSONArray rows = res.getJSONArray("result");
 					int rownum = 0;
 					for(int i=0; i< rows.length(); i++){
 						JSONArray row = rows.getJSONObject(i).getJSONArray("rows");
 						for (int j=0; j<row.length(); j++){			
-							getDataTable().getJSONArray("rows").put(rownum++, row.getJSONObject(j).getJSONArray("result"));
+							newDataTable.getJSONArray("rows").put(rownum++, row.getJSONObject(j).getJSONArray("result"));
 						}
-						temporaryCache.put(url, getDataTable());
-						temporaryRowCache = null;
 					}
+					currentDataTable = newDataTable;
+					getTemporaryCache().put(url, currentDataTable);
+					temporaryRowCache = null;
 				} catch (JSONException e) {
 					sendBroadcast(ChartEvent.FAILURE);
 					return;
@@ -131,35 +145,35 @@ public abstract class ChartDataLoader {
 		});		
 	}
 	
-	public void loadChartTopViewData(final String url){
-		client.get(url, new JsonHttpResponseHandler(){
-			@Override
-			public void onSuccess(JSONObject res) {
-				try {
-					// empty the datatable rows
-					getDataTable().put("rows", new JSONArray());
-
-					JSONArray rows = res.getJSONArray("rows");					
-					for(int i=0; i< rows.length(); i++){
-						JSONArray row = rows.getJSONObject(i).getJSONArray("result");
-						getDataTable().getJSONArray("rows").put(row);
-					}
-					temporaryCache.put(url, getDataTable());
-					temporaryRowCache = null;
-				} catch (JSONException e) {
-					sendBroadcast(ChartEvent.FAILURE);
-					return;
-				}
-				sendBroadcast(ChartEvent.SUCCESS);
-			}
-
-			@Override
-			public void onFailure(Throwable t, JSONObject arg1) {
-				Log.e("ChartDataLoader", "Failed to retrieve data for "+getIntentAction()+". "+(t != null ? t.getMessage() : ""));
-				sendBroadcast(ChartEvent.FAILURE);
-			}
-		});
-	}
+//	public void loadChartTopViewData(final String url){
+//		client.get(url, new JsonHttpResponseHandler(){
+//			@Override
+//			public void onSuccess(JSONObject res) {
+//				try {
+//					// empty the datatable rows
+//					newDataTable().put("rows", new JSONArray());
+//
+//					JSONArray rows = res.getJSONArray("rows");					
+//					for(int i=0; i< rows.length(); i++){
+//						JSONArray row = rows.getJSONObject(i).getJSONArray("result");
+//						newDataTable().getJSONArray("rows").put(row);
+//					}
+//					getTemporaryCache().put(url, newDataTable());
+//					temporaryRowCache = null;
+//				} catch (JSONException e) {
+//					sendBroadcast(ChartEvent.FAILURE);
+//					return;
+//				}
+//				sendBroadcast(ChartEvent.SUCCESS);
+//			}
+//
+//			@Override
+//			public void onFailure(Throwable t, JSONObject arg1) {
+//				Log.e("ChartDataLoader", "Failed to retrieve data for "+getIntentAction()+". "+(t != null ? t.getMessage() : ""));
+//				sendBroadcast(ChartEvent.FAILURE);
+//			}
+//		});
+//	}
 		
 	private void sendBroadcast(int status){
 		Intent intent = new Intent(getIntentAction());
@@ -171,7 +185,7 @@ public abstract class ChartDataLoader {
 		if(temporaryRowCache == null){
 			temporaryRowCache = new ArrayList<List<Object>>();
 			
-			JSONArray rows = getDataTable().getJSONArray("rows");
+			JSONArray rows = currentDataTable.getJSONArray("rows");
 			for(int i=0; i<rows.length(); i++){
 				List<Object> cacheRow = new ArrayList<Object>();
 				JSONArray row = rows.getJSONArray(i);
@@ -211,4 +225,25 @@ public abstract class ChartDataLoader {
 	public void setPort(int port) {
 		this.port = port;
 	}	
+	
+	private JSONObject newBatchDataTable() throws JSONException {
+		JSONObject rawBatchDataTable = new JSONObject();
+		rawBatchDataTable.put("cols", topViewColumns);
+		rawBatchDataTable.put("rows", new JSONArray());
+		return rawBatchDataTable;
+	}
+
+	private ConcurrentMap<String, JSONObject> temporaryCache;
+	List<List<Object>> temporaryRowCache = null;
+	
+	public void setTemporaryCache(ConcurrentMap<String, JSONObject> temporaryCache){
+		this.temporaryCache = temporaryCache;
+	}
+	
+	public Map<String, JSONObject> getTemporaryCache(){
+		if(temporaryCache == null){
+			temporaryCache = new ConcurrentHashMap<String, JSONObject>();
+		}
+		return temporaryCache;
+	}
 }

@@ -187,7 +187,7 @@ public final class R {
         public static final int datalistItemHeight=0x7f070007;
         public static final int datalistPaddingBottom=0x7f070004;
         public static final int datalistPaddingTop=0x7f070003;
-        public static final int datalistTextPadding=0x7f07000d;
+        public static final int datalistTextPadding=0x7f07000f;
         public static final int datalistTextSizeLarge=0x7f070005;
         public static final int datalistTextSizeSmall=0x7f070006;
         /**  main menu 
@@ -199,6 +199,12 @@ public final class R {
         public static final int menuItemPaddingLarge=0x7f07000b;
         public static final int menuItemPaddingSmall=0x7f07000c;
         public static final int menuTextHeightMin=0x7f07000a;
+        /**  chart settings 
+ chart settings 
+ chart settings 
+         */
+        public static final int radioGroupTextSize=0x7f07000d;
+        public static final int radioTextSize=0x7f07000e;
     }
     public static final class drawable {
         public static final int action_search=0x7f020000;

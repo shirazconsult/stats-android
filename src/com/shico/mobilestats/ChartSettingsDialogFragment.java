@@ -32,7 +32,7 @@ public class ChartSettingsDialogFragment extends DialogFragment {
 				@Override
 				public void onClick(DialogInterface dialog, int which) {
 					Bundle arguments = getArguments();
-					String chartName = arguments.getString("chartName");					
+					String chartName = arguments.getString(WebViewFragment.CHART_NAME);					
 					SharedPreferences.Editor editor = PreferenceManager.getDefaultSharedPreferences(getActivity()).edit();
 					
 					View thisView = ChartSettingsDialogFragment.this.view;
@@ -82,7 +82,7 @@ public class ChartSettingsDialogFragment extends DialogFragment {
 		super.onActivityCreated(savedInstanceState);
 		
 		Bundle arguments = getArguments();
-		String chartName = arguments.getString("chartName");
+		String chartName = arguments.getString(WebViewFragment.CHART_NAME);
 		readChartPreferences(view, chartName);
 	}
 

@@ -3,8 +3,9 @@
     <script type="text/javascript" src="jsapi.js"></script>
     <script type="text/javascript">
     	google.load("visualization", "1", {packages:["corechart"]});
-	    
+	console.log('Loading visualisation ......');    
 	function getNativeLiveUsageColumnChartView(data, vaxisIdx){
+	console.log('getNativeLiveUsageColumnChartView ...........');
 		var dt = new google.visualization.DataTable();
 		var time = data.getValue(0, 5);  // 5 = time index
 		

@@ -4,6 +4,7 @@ import org.json.JSONException;
 
 import android.annotation.SuppressLint;
 import android.app.Fragment;
+import android.app.ProgressDialog;
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
@@ -35,6 +36,8 @@ import com.shico.mobilestats.loaders.LiveUsageChartDataLoader;
 public class WebViewFragment extends Fragment implements OnSharedPreferenceChangeListener{
 	public static final String ARG_CHART_ID = "chart_id";
 	public static final String ARG_CHART_URL = "chart_url";
+	public static final String CHART_NAME = "chart_name";
+	private static final String CHART_OPTIONS = "chart_options";
 	
 	public static final String Y_AXIS_OPTION_SUFFIX = ".yAxis";
 	public static final String SCORE_NUM_OPTION_SUFFIX = ".scoreNum";
@@ -47,10 +50,36 @@ public class WebViewFragment extends Fragment implements OnSharedPreferenceChang
 	private DisplayMetrics metrics;
 	private String currentChartName;
 	private String currentChartOptions;
+	private ProgressDialog progressDiag;
+		
 	
 	@Override
-	public void onActivityCreated(Bundle savedInstanceState) {
-		super.onActivityCreated(savedInstanceState);
+	public void onCreate(Bundle savedInstanceState) {
+		super.onCreate(savedInstanceState);
+		try {
+			myWebClient = new MyWebClient();
+			liveUsageChartDataLoader = new LiveUsageChartDataLoader(getActivity());
+			if(savedInstanceState != null){
+				currentChartName = savedInstanceState.getString(CHART_NAME);
+				currentChartOptions = savedInstanceState.getString(CHART_OPTIONS);
+				currentURL = savedInstanceState.getString(ARG_CHART_URL);
+				liveUsageChartDataLoader.onRestoreInstanceState(savedInstanceState);
+			}
+		} catch (JSONException e) {
+			Log.e("WebViewFragment", "Failed to instantiate LiveUsageChartDataLoader.");
+			Toast.makeText(getActivity(), "Failed to instantiate LiveUsageChartDataLoader.", Toast.LENGTH_SHORT).show();
+		}
+		
+	}
+
+	@Override
+	public void onSaveInstanceState(Bundle outState) {
+		super.onSaveInstanceState(outState);
+		outState.putString(CHART_NAME, currentChartName);
+		outState.putString(CHART_OPTIONS, currentChartOptions);
+		outState.putString(ARG_CHART_URL, currentURL);
+		
+		liveUsageChartDataLoader.onSaveInstanceState(outState);
 	}
 
 	@SuppressLint("SetJavaScriptEnabled")
@@ -58,14 +87,6 @@ public class WebViewFragment extends Fragment implements OnSharedPreferenceChang
 	public View onCreateView(LayoutInflater inflater, ViewGroup container,
 			Bundle savedInstanceState) {
 		View v = inflater.inflate(R.layout.webview, container, false);
-
-		try {
-			myWebClient = new MyWebClient();
-			liveUsageChartDataLoader = new LiveUsageChartDataLoader(getActivity());
-		} catch (JSONException e) {
-			Log.e("WebViewFragment", "Failed to instantiate LiveUsageChartDataLoader.");
-			Toast.makeText(getActivity(), "Failed to instantiate LiveUsageChartDataLoader.", Toast.LENGTH_SHORT).show();
-		}
 		
 		thisWebView = (WebView) v.findViewById(R.id.webview);
 		thisWebView.getSettings().setJavaScriptEnabled(true);
@@ -79,9 +100,9 @@ public class WebViewFragment extends Fragment implements OnSharedPreferenceChang
 		switch (idx) {
 		case MenuAdapter.CHARTS_MENU_IDX:
 			currentChartName = getArguments().getString(MainActivity.ARG_MENU_CHART_ITEM_NAME);
-			currentChartOptions = getChartOptions(PreferenceManager.getDefaultSharedPreferences(getActivity()));
+			updateCurrentChartOptions(PreferenceManager.getDefaultSharedPreferences(getActivity()));
 			if(currentChartName != null){
-				thisWebView.loadUrl("file:///android_asset/LiveUsage.html");
+				loadChartView();
 			}
 			break;
 		case MenuAdapter.HELP_MENU_IDX:
@@ -188,6 +209,9 @@ public class WebViewFragment extends Fragment implements OnSharedPreferenceChang
 		@Override
 		public void onPageFinished(WebView view, String url) {
 			this.view = view;
+			if(progressDiag != null){
+				progressDiag.setMessage("Loading statistics data...");
+			}
 			liveUsageChartDataLoader.getTopViewInBatch("/viewbatch/LiveUsage", "2013-02", "2013-05", currentChartOptions);			
 		}
 		
@@ -201,12 +225,20 @@ public class WebViewFragment extends Fragment implements OnSharedPreferenceChang
 					return;
 				}
 				if(view != null){
-					// chart
-					view.loadUrl("javascript:drawChart()");
+					try{
+						if(progressDiag != null){
+							progressDiag.setMessage("Drawing chart...");
+						}
+
+						// chart					
+						view.loadUrl("javascript:drawChart()");
 					
-					// table
-					if(isPortrait()){
-						displayDataList(context);
+						// table
+						if(isPortrait()){
+							displayDataList(context);
+						}
+					}finally{
+						progressDiag.dismiss();
 					}
 				}
 			}
@@ -262,7 +294,7 @@ public class WebViewFragment extends Fragment implements OnSharedPreferenceChang
 			chartSettingsDialog = new ChartSettingsDialogFragment();
 		}
 		Bundle args = new Bundle();
-		args.putString("chartName", currentChartName);
+		args.putString(CHART_NAME, currentChartName);
 		chartSettingsDialog.setArguments(args);
 		chartSettingsDialog.show(getFragmentManager(), "test");
 	}
@@ -288,8 +320,8 @@ public class WebViewFragment extends Fragment implements OnSharedPreferenceChang
 	@Override
 	public void onSharedPreferenceChanged(SharedPreferences sharedPreferences, String key) {
 		if(key.startsWith(currentChartName)){
-			currentChartOptions = getChartOptions(sharedPreferences);
-			thisWebView.loadUrl("file:///android_asset/LiveUsage.html");
+			updateCurrentChartOptions(sharedPreferences);
+			loadChartView();
 			return;
 		}
 		if(key.equals("host") || key.equals("port")){
@@ -302,13 +334,23 @@ public class WebViewFragment extends Fragment implements OnSharedPreferenceChang
 		}
 	}
 	
-	private String getChartOptions(SharedPreferences prefs){
+	private String updateCurrentChartOptions(SharedPreferences prefs){
 		String viewersOrDuration = prefs.getString(currentChartName+Y_AXIS_OPTION_SUFFIX, "viewers");
 		String topOrBottom = prefs.getString(currentChartName+SCORE_TYPE_OPTION_SUFFIX, "top");
 		int num = prefs.getInt(currentChartName+SCORE_NUM_OPTION_SUFFIX, 5);
 		
-		return new StringBuilder(viewersOrDuration).
+		currentChartOptions = new StringBuilder(viewersOrDuration).
 				append(",").append(topOrBottom.equals("bottom") ? "low" : "top").
 				append(",").append(num).toString();
+		
+		Log.d("WebViewFragment", "Updating current chart options to: "+currentChartOptions);
+		return currentChartOptions;
+	}
+	
+	private void loadChartView(){
+		progressDiag = new ProgressDialog(getActivity(), ProgressDialog.STYLE_HORIZONTAL); 
+		progressDiag.setMessage("Loading chart library ...");
+		progressDiag.show();
+		thisWebView.loadUrl("file:///android_asset/LiveUsage.html");
 	}
 }

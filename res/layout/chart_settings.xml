@@ -17,7 +17,7 @@
             android:text="@string/y_axis_title"
             android:textStyle="bold"
             android:textColor="@color/White"
-            android:textSize="18sp" />
+            android:textSize="@dimen/radioGroupTextSize" />
 
         <RadioGroup
             android:id="@+id/radio_gr_yaxis"
@@ -31,15 +31,17 @@
                 android:layout_height="wrap_content"
                 android:checked="true"
 	            android:textColor="@color/White"
-                android:text="@string/viewers" />
+                android:text="@string/viewers" 
+                android:textSize="@dimen/radioTextSize"/>
 
             <RadioButton
                 android:id="@+id/radio_btn_duration"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:textColor="@color/White"
-                android:text="@string/duration" />
-        </RadioGroup>
+                android:text="@string/duration"
+                android:textSize="@dimen/radioTextSize"/>
+            </RadioGroup>
     </LinearLayout>
 
     <LinearLayout
@@ -56,7 +58,7 @@
             android:text="@string/score_type_title"
             android:textStyle="bold"            
             android:textColor="@color/White"
-            android:textSize="18sp" />
+            android:textSize="@dimen/radioGroupTextSize" />
 
         <RadioGroup
             android:id="@+id/radio_gr_score_type"
@@ -70,14 +72,17 @@
                 android:layout_height="wrap_content"
                 android:checked="true"
 	            android:textColor="@color/White"
-                android:text="@string/top" />
+                android:text="@string/top" 
+                android:textSize="@dimen/radioTextSize"/>                
 
             <RadioButton
                 android:id="@+id/radio_btn_bottom"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
 	            android:textColor="@color/White"
-                android:text="@string/bottom" />
+                android:text="@string/bottom"
+                android:textSize="@dimen/radioTextSize"/>
+                
         </RadioGroup>
     </LinearLayout>
 
@@ -95,7 +100,7 @@
             android:text="@string/num_of_score_items_title"
             android:textStyle="bold"
             android:textColor="@color/White"
-            android:textSize="18sp" />
+            android:textSize="@dimen/radioGroupTextSize" />
 
         <RadioGroup
             android:id="@+id/radio_gr_score_num"
@@ -108,7 +113,8 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
 	            android:textColor="@color/White"
-                android:text="@string/three" />
+                android:text="@string/three"
+                android:textSize="@dimen/radioTextSize"/>                
 
             <RadioButton
                 android:id="@+id/radio_btn_5"
@@ -116,14 +122,17 @@
                 android:layout_height="wrap_content"
                 android:checked="true"
 	            android:textColor="@color/White"
-                android:text="@string/five" />
+                android:text="@string/five" 
+                android:textSize="@dimen/radioTextSize"/>                
 
             <RadioButton
                 android:id="@+id/radio_btn_10"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
 	            android:textColor="@color/White"
-                android:text="@string/ten" />
+                android:text="@string/ten" 
+                android:textSize="@dimen/radioTextSize"/>
+                
         </RadioGroup>
     </LinearLayout>
 

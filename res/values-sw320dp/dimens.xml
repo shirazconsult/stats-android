@@ -20,4 +20,9 @@
 	<dimen name="menuTextHeightMin">8dp</dimen>
 	<dimen name="menuItemPaddingLarge">6dp</dimen>
 	<dimen name="menuItemPaddingSmall">4dp</dimen>
+	
+	<!-- chart settings -->
+	<dimen name="radioGroupTextSize">10sp</dimen>
+	<dimen name="radioTextSize">8sp</dimen>
+		
 </resources>
