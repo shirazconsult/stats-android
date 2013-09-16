@@ -122,7 +122,7 @@ public class MainActivity extends Activity {
 			if(chartName.equalsIgnoreCase("channels")){				
 				setFragment(args, new LiveUsageWebViewFragment());
 			}else if(chartName.equalsIgnoreCase("movies")){
-				Toast.makeText(MainActivity.this, "No view for "+chartName+" is implemented yet.", Toast.LENGTH_LONG);
+				setFragment(args, new MovieRentWebViewFragment());
 			}else if(chartName.equalsIgnoreCase("programs")){
 				Toast.makeText(MainActivity.this, "No view for "+chartName+" is implemented yet.", Toast.LENGTH_LONG);				
 			}else if(chartName.equalsIgnoreCase("widgets")){

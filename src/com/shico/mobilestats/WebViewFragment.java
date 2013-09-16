@@ -227,7 +227,7 @@ public abstract class WebViewFragment extends Fragment implements OnSharedPrefer
 			}
 			
 			public IntentFilter getIntentFilter(){
-				return new IntentFilter(ChartEvent.LIVE_USAGE_DATA);
+				return new IntentFilter(ChartEvent.STATS_EVENT_DATA);
 			}
 		}
 		

@@ -49,8 +49,6 @@ public abstract class ChartDataLoader {
 	
 	protected JSONObject currentDataTable;
 
-	protected abstract String getIntentAction();
-
 	public ChartDataLoader(Context context) throws JSONException {
 		this.context = context;
 		if(topViewColumns == null){
@@ -175,6 +173,10 @@ public abstract class ChartDataLoader {
 //		});
 //	}
 		
+	private String getIntentAction() {
+		return ChartEvent.STATS_EVENT_DATA;
+	}
+
 	private void sendBroadcast(int status){
 		Intent intent = new Intent(getIntentAction());
 		intent.putExtra(ChartEvent.DATA_LOAD_STATUS, status);

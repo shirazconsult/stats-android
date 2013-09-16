@@ -6,10 +6,10 @@ import org.json.JSONObject;
 import android.content.Context;
 import android.webkit.JavascriptInterface;
 
-public class LiveUsageChartDataLoader extends ChartDataLoader {
+public class MovieRentChartDataLoader extends ChartDataLoader {
 	private JSONObject options;
 	
-	public LiveUsageChartDataLoader(Context context) throws JSONException {
+	public MovieRentChartDataLoader(Context context) throws JSONException {
 		super(context);
 	}
 
@@ -20,7 +20,7 @@ public class LiveUsageChartDataLoader extends ChartDataLoader {
 	}
 	@JavascriptInterface
 	public String getOptions() throws JSONException{
-		return new JSONObject("{title: 'Live Usage', "+ 	 
+		return new JSONObject("{title: 'Movie Rent', "+ 	 
 			"hAxis: {title: 'Time'}, "+
 			"vAxis: {title: 'Viewers'}}").toString();
     }    
