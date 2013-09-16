@@ -6,24 +6,10 @@
     	google.load("visualization", "1", {packages:["corechart"]});     
 
 	  function drawChart(){
-		var chart = new google.visualization.ColumnChart(document.getElementById('chart_div'));
-
       	var options = JSON.parse(LiveUsageChartDataLoader.getOptions());
 		var jsonData = JSON.parse(LiveUsageChartDataLoader.getData());
-		var data = new google.visualization.DataTable();
 		
-		var cols = jsonData.cols;
-		var rows = jsonData.rows;
-		for(var i=0; i<cols.length; i++){
-			data.addColumn(cols[i]);
-		}
-		for(var i=0; i<rows.length; i++){
-			data.addRow(rows[i]);
-		}
-		
-		var processedData = getColumnChartView(data, 3);  // 3 = viewers index
-		console.log('Processed DataTable.. Drawing');
-	    chart.draw(processedData, options);
+		drawColumnChart(jsonData, options);
       }      
     </script>
   </head>

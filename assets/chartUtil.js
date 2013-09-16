@@ -1,3 +1,21 @@
+      function drawColumnChart(jsonData, options){
+		var chart = new google.visualization.ColumnChart(document.getElementById('chart_div'));
+		var data = new google.visualization.DataTable();
+		
+		var cols = jsonData.cols;
+		var rows = jsonData.rows;
+		for(var i=0; i<cols.length; i++){
+			data.addColumn(cols[i]);
+		}
+		for(var i=0; i<rows.length; i++){
+			data.addRow(rows[i]);
+		}
+		
+		var processedData = getColumnChartView(data, 3);  // 3 = viewers index
+		console.log('Processed DataTable.. Drawing');
+	    chart.draw(processedData, options);      
+      }    
+
 	function getColumnChartView(data, vaxisIdx){
 		var dt = new google.visualization.DataTable();
 		var time = data.getValue(0, 5);  // 5 = time index

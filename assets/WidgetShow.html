@@ -6,11 +6,11 @@
     	google.load("visualization", "1", {packages:["corechart"]});     
 
 	  function drawChart(){
-      	var options = JSON.parse(MovieRentChartDataLoader.getOptions());
-		var jsonData = JSON.parse(MovieRentChartDataLoader.getData());
-
+      	var options = JSON.parse(WidgetShowChartDataLoader.getOptions());
+		var jsonData = JSON.parse(WidgetShowChartDataLoader.getData());
+		
 		drawColumnChart(jsonData, options);
-      }        
+      }      
     </script>
   </head>
   <body>
