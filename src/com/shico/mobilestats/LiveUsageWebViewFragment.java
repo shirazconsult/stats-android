@@ -14,12 +14,11 @@ public class LiveUsageWebViewFragment extends WebViewFragment {
 	private static final String COLUMN_CHART_HTML_VIEWERS = "LiveUsage.html";
 	private static final String COLUMN_CHART_HTML_DURATION = "LiveUsage_2.html";
 	private static final String PIE_CHART_HTML = "LiveUsage_pie_chart.html";
-	private static final int PRIMARY_PAGE_WITH_COLUMN_CHART_VIEWERS = 1;
-	private static final int SECONDARY_PAGE_WITH_COLUMN_CHART_DURATION = 2;
-	private static final int TERNARY_PAGE_WITH_PIE_CHART = 3;	
+	private static final int PRIMARY_PAGE_WITH_COLUMN_CHART_VIEWERS = 0;
+	private static final int SECONDARY_PAGE_WITH_COLUMN_CHART_DURATION = 1;
+	private static final int TERNARY_PAGE_WITH_PIE_CHART = 2;	
 	
 	private LiveUsageChartDataLoader liveUsageChartDataLoader; 
-	private int viewpage = PRIMARY_PAGE_WITH_COLUMN_CHART_VIEWERS;  // page-1. primary batch/groupped view page-2. seco 	
 		
 	@Override
 	protected ChartDataLoader getChartDataLoader() {
@@ -35,7 +34,7 @@ public class LiveUsageWebViewFragment extends WebViewFragment {
 
 	@Override
 	protected void addJavascriptInterface(WebView view) {
-		view.addJavascriptInterface(liveUsageChartDataLoader, "LiveUsageChartDataLoader");
+		view.addJavascriptInterface(getChartDataLoader(), "LiveUsageChartDataLoader");
 	}
 
 	@Override

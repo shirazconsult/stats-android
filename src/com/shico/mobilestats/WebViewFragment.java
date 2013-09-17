@@ -47,6 +47,7 @@ public abstract class WebViewFragment extends Fragment implements OnSharedPrefer
 	protected String currentURL;
 	protected MyWebClient myWebClient; 
 	protected WebView thisWebView;
+	protected ListView thisListView;
 	private DisplayMetrics metrics;
 	protected String currentChartName;
 	protected String currentChartOptions;
@@ -95,6 +96,7 @@ public abstract class WebViewFragment extends Fragment implements OnSharedPrefer
 			Bundle savedInstanceState) {
 		View v = inflater.inflate(R.layout.webview, container, false);
 		
+		thisListView = (ListView) v.findViewById(R.id.groupped_data_list);
 		thisWebView = (WebView) v.findViewById(R.id.webview);
 		thisWebView.getSettings().setJavaScriptEnabled(true);
 		thisWebView.setWebViewClient(myWebClient);
@@ -216,7 +218,7 @@ public abstract class WebViewFragment extends Fragment implements OnSharedPrefer
 		public void onPageFinished(WebView view, String url) {
 			this.view = view;
 			if(progressDiag != null){
-				progressDiag.setMessage("Loading statistics data...");
+				progressDiag.setMessage("Loading statistics data...:"+viewpage);
 			}
 			loadData();
 		}
@@ -233,9 +235,10 @@ public abstract class WebViewFragment extends Fragment implements OnSharedPrefer
 				if(view != null){
 					try{
 						if(progressDiag != null){
-							progressDiag.setMessage("Drawing chart...");
+							progressDiag.setMessage("Drawing chart...:"+viewpage);
 						}
-
+						
+						Log.d("WebViewFragment", viewpage+": Received event. Drawing chart and table."+intent.toString());
 						// chart					
 						view.loadUrl("javascript:drawChart()");
 					
@@ -294,11 +297,10 @@ public abstract class WebViewFragment extends Fragment implements OnSharedPrefer
 	}
 	
 	private void displayDataList(Context context){
-		ListView lv = (ListView)getActivity().findViewById(R.id.groupped_data_list);
 		GrouppedDataListAdapter lvAdapter;
 		try {
 			lvAdapter = new GrouppedDataListAdapter(getActivity(), getChartDataLoader().getDataRows());
-			lv.setAdapter(lvAdapter);
+			thisListView.setAdapter(lvAdapter);
 		} catch (JSONException e) {
 			Toast.makeText(getActivity(), "Failed to retrieve table data.", Toast.LENGTH_LONG).show();
 			return;
@@ -335,14 +337,15 @@ public abstract class WebViewFragment extends Fragment implements OnSharedPrefer
 				append(",").append(topOrBottom.equals("bottom") ? "low" : "top").
 				append(",").append(num).toString();
 		
-		Log.d("WebViewFragment", "Updating current chart options to: "+currentChartOptions);
+		Log.d("WebViewFragment", viewpage+": Updating current chart options to: "+currentChartOptions);
 		return currentChartOptions;
 	}
 	
 	private void loadChartView(){
 		progressDiag = new ProgressDialog(getActivity(), ProgressDialog.STYLE_HORIZONTAL); 
-		progressDiag.setMessage("Loading chart library ...");
+		progressDiag.setMessage(viewpage+": Loading chart library ...");
 		progressDiag.show();
+		Log.d("WebViewFragment", viewpage+": Loading page: "+getColumnChartViewHtml());
 		thisWebView.loadUrl("file:///android_asset/"+getColumnChartViewHtml());
 	}
 }
