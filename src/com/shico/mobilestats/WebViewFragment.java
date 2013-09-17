@@ -28,7 +28,6 @@ import android.webkit.WebViewClient;
 import android.widget.ListView;
 import android.widget.Toast;
 
-import com.shico.mobilestats.WebViewFragment.MyWebClient.EventReceiver;
 import com.shico.mobilestats.adapters.GrouppedDataListAdapter;
 import com.shico.mobilestats.event.ChartEvent;
 import com.shico.mobilestats.loaders.ChartDataLoader;
@@ -37,6 +36,7 @@ import com.shico.mobilestats.settings.ChartSettingsDialogFragment;
 public abstract class WebViewFragment extends Fragment implements OnSharedPreferenceChangeListener{
 	public static final String ARG_CHART_ID = "chart_id";
 	public static final String ARG_CHART_URL = "chart_url";
+	public final static String ARG_CHART_VIEWPAGE = "chart.viewpage";
 	public static final String CHART_NAME = "chart_name";
 	private static final String CHART_OPTIONS = "chart_options";
 	
@@ -50,12 +50,19 @@ public abstract class WebViewFragment extends Fragment implements OnSharedPrefer
 	private DisplayMetrics metrics;
 	protected String currentChartName;
 	protected String currentChartOptions;
+//	protected boolean groupView;
 	private ProgressDialog progressDiag;
 
 	protected abstract ChartDataLoader getChartDataLoader();
 	protected abstract void addJavascriptInterface(WebView view);
 	protected abstract String getColumnChartViewHtml();
 	protected abstract String getChartEventType();
+	
+	// specific methods for view pages (fragments of same type but with different views)
+	protected abstract void loadData();
+	protected abstract IntentFilter getBroadcastReceiverFilter();
+	
+	protected int viewpage;
 	
 	@Override
 	public void onCreate(Bundle savedInstanceState) {
@@ -65,6 +72,9 @@ public abstract class WebViewFragment extends Fragment implements OnSharedPrefer
 			currentChartName = savedInstanceState.getString(CHART_NAME);
 			currentChartOptions = savedInstanceState.getString(CHART_OPTIONS);
 			currentURL = savedInstanceState.getString(ARG_CHART_URL);
+			viewpage = savedInstanceState.getInt(ARG_CHART_VIEWPAGE);
+			
+			getChartDataLoader().onRestoreInstanceState(savedInstanceState);
 		}		
 	}
 
@@ -74,6 +84,9 @@ public abstract class WebViewFragment extends Fragment implements OnSharedPrefer
 		outState.putString(CHART_NAME, currentChartName);
 		outState.putString(CHART_OPTIONS, currentChartOptions);
 		outState.putString(ARG_CHART_URL, currentURL);		
+		outState.putInt(ARG_CHART_VIEWPAGE, viewpage);
+		
+		getChartDataLoader().onSaveInstanceState(outState);
 	}
 
 	@SuppressLint("SetJavaScriptEnabled")
@@ -91,6 +104,7 @@ public abstract class WebViewFragment extends Fragment implements OnSharedPrefer
 		setGestureListener(v, thisWebView);
 		
 		currentChartName = getArguments().getString(MainActivity.ARG_MENU_CHART_ITEM_NAME);
+		viewpage = getArguments().getInt(ARG_CHART_VIEWPAGE);
 		updateCurrentChartOptions(PreferenceManager.getDefaultSharedPreferences(getActivity()));
 		if(currentChartName != null){
 			loadChartView();
@@ -103,6 +117,30 @@ public abstract class WebViewFragment extends Fragment implements OnSharedPrefer
 		return v;
 	}
 	
+//	private void showSecondChartFragment() {
+//		Bundle args = new Bundle();
+//		args.putString(MainActivity.ARG_MENU_CHART_ITEM_NAME, currentChartName);
+//		args.putBoolean(WebViewFragment.ARG_CHART_GROUP_VIEW, false);
+//
+//		WebViewFragment secondFragment = null;
+//		if(currentChartName.equalsIgnoreCase("channels")){				
+//			secondFragment = new LiveUsageWebViewFragment();
+//		}else if(currentChartName.equalsIgnoreCase("movies")){
+//			secondFragment = new MovieRentWebViewFragment();
+//		}else if(currentChartName.equalsIgnoreCase("programs")){
+//			Toast.makeText(getActivity(), "No view for "+currentChartName+" is implemented yet.", Toast.LENGTH_LONG).show();				
+//		}else if(currentChartName.equalsIgnoreCase("widgets")){
+//			secondFragment = new WidgetShowWebViewFragment();
+//		}
+//
+//		secondFragment.setArguments(args);
+//
+//		FragmentManager fragmentManager = getFragmentManager();
+//		fragmentManager.beginTransaction()
+//				.replace(R.id.content_frame, secondFragment).commit();
+//
+//	}
+
 	private static final int swipe_Min_Distance = 100;
 	private static final int swipe_Max_Distance = 350;
 	private static final int swipe_Min_Velocity = 100;
@@ -131,6 +169,7 @@ public abstract class WebViewFragment extends Fragment implements OnSharedPrefer
 						&& xDistance > swipe_Min_Distance) {
 					if (e1.getX() > e2.getX()){ // right to left
 						// swipe to left
+//						showSecondChartFragment();
 					}else{
 						// swipe to right
 					}
@@ -147,6 +186,7 @@ public abstract class WebViewFragment extends Fragment implements OnSharedPrefer
 				}
 				return result;
 			}
+
 		});
 
 		for (int i = 0; i < views.length; i++) {			
@@ -157,23 +197,6 @@ public abstract class WebViewFragment extends Fragment implements OnSharedPrefer
 				}
 			});	
 		}
-	}
-
-	public void updateUrl(String url) {
-		Log.d("MyWebClient", "Update URL [" + url + "] - View [" + getView()
-				+ "]");
-		currentURL = url;
-		WebView wv = (WebView) getView().findViewById(R.id.content_frame);
-		wv.getSettings().setJavaScriptEnabled(true);
-		wv.loadUrl(url);
-	}
-
-	private void loadChartUrl(Bundle savedInstanceState, WebView wv) {
-		currentURL = getArguments().getString(ARG_CHART_URL);
-		if (currentURL == null && savedInstanceState != null) {
-			currentURL = savedInstanceState.getString(ARG_CHART_URL);
-		}
-		wv.loadUrl(currentURL);
 	}
 
 	public class MyWebClient extends WebViewClient {
@@ -195,7 +218,7 @@ public abstract class WebViewFragment extends Fragment implements OnSharedPrefer
 			if(progressDiag != null){
 				progressDiag.setMessage("Loading statistics data...");
 			}
-			getChartDataLoader().getTopViewInBatch("/viewbatch/"+getChartEventType(), "2013-02", "2013-05", currentChartOptions);			
+			loadData();
 		}
 		
 		// Broadcast receiver
@@ -225,10 +248,6 @@ public abstract class WebViewFragment extends Fragment implements OnSharedPrefer
 					}
 				}
 			}
-			
-			public IntentFilter getIntentFilter(){
-				return new IntentFilter(ChartEvent.STATS_EVENT_DATA);
-			}
 		}
 		
 		public BroadcastReceiver getEventReceiver(){
@@ -245,8 +264,7 @@ public abstract class WebViewFragment extends Fragment implements OnSharedPrefer
 		
 		// register BroadcastReceiver
 		BroadcastReceiver eventReceiver = myWebClient.getEventReceiver();
-		IntentFilter filter = ((EventReceiver)eventReceiver).getIntentFilter();
-		LocalBroadcastManager.getInstance(this.getActivity()).registerReceiver(eventReceiver, filter);
+		LocalBroadcastManager.getInstance(this.getActivity()).registerReceiver(eventReceiver, getBroadcastReceiverFilter());
 		
 		// register preference change Listener
 		PreferenceManager.getDefaultSharedPreferences(getActivity()).registerOnSharedPreferenceChangeListener(this);

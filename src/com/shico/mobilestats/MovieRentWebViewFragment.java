@@ -2,6 +2,7 @@ package com.shico.mobilestats;
 
 import org.json.JSONException;
 
+import android.content.IntentFilter;
 import android.os.Bundle;
 import android.util.Log;
 import android.webkit.WebView;
@@ -28,9 +29,8 @@ public class MovieRentWebViewFragment extends WebViewFragment {
 			}
 		} catch (JSONException e) {
 			Log.e("WebViewFragment", "Failed to instantiate MovieRentChartDataLoader.");
-			Toast.makeText(getActivity(), "Failed to instantiate MovieRentChartDataLoader.", Toast.LENGTH_SHORT).show();
+			Toast.makeText(getActivity(), "Failed to instantiate MovieRentChartDataLoader.", Toast.LENGTH_LONG).show();
 		}
-		
 	}
 
 	@Override
@@ -57,5 +57,17 @@ public class MovieRentWebViewFragment extends WebViewFragment {
 	@Override
 	protected String getChartEventType() {
 		return EVENT_TYPE;
+	}
+
+	@Override
+	protected void loadData() {
+		// TODO Auto-generated method stub
+		
+	}
+
+	@Override
+	protected IntentFilter getBroadcastReceiverFilter() {
+		// TODO Auto-generated method stub
+		return null;
 	}
 }

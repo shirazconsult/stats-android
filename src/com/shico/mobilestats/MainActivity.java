@@ -1,27 +1,32 @@
 package com.shico.mobilestats;
 
-import com.shico.mobilestats.adapters.MenuAdapter;
-import com.shico.mobilestats.settings.SettingsFragment;
-
 import android.app.Activity;
 import android.app.Fragment;
 import android.app.FragmentManager;
+import android.content.Context;
 import android.content.res.Configuration;
 import android.os.Bundle;
 import android.preference.PreferenceManager;
 import android.support.v4.app.ActionBarDrawerToggle;
+import android.support.v4.view.ViewPager;
 import android.support.v4.widget.DrawerLayout;
+import android.util.AttributeSet;
 import android.view.Gravity;
+import android.view.LayoutInflater;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
 import android.widget.ExpandableListView;
 import android.widget.Toast;
 
+import com.shico.mobilestats.adapters.ChartPagerAdapter;
+import com.shico.mobilestats.adapters.MenuAdapter;
+import com.shico.mobilestats.settings.SettingsFragment;
+
 public class MainActivity extends Activity {
 	public final static String ARG_MENU_ITEM_IDX = "menu.item.idx";
 	public final static String ARG_MENU_CHART_ITEM_NAME = "menu.chart.item.name";
-
+	
 	private DrawerLayout mDrawerLayout;
 	private ExpandableListView mMenuDrawer;
 	private ActionBarDrawerToggle mDrawerToggle;
@@ -30,6 +35,8 @@ public class MainActivity extends Activity {
 	private CharSequence mTitle;
 	private String[] mDrawerMenuItems;
 
+	private ViewPager mViewPager;
+	
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
@@ -79,6 +86,8 @@ public class MainActivity extends Activity {
 		if (savedInstanceState == null) {
 			mMenuDrawer.setSelectedGroup(0);
 		}		
+		
+		
 	}
 
 	@Override
@@ -114,19 +123,20 @@ public class MainActivity extends Activity {
 			String chartName = chartItems[childPosition];
 
 			Bundle args = new Bundle();
-			args.putString("temp.html", "<html><body><h1>Here comes Chart for "
-					+ chartName + ".</h1></body></html>");
 			args.putInt(ARG_MENU_ITEM_IDX, groupPosition);
 			args.putString(ARG_MENU_CHART_ITEM_NAME, chartName);
 			
 			if(chartName.equalsIgnoreCase("channels")){				
-				setFragment(args, new LiveUsageWebViewFragment());
+//				setFragment(args, new LiveUsageWebViewFragment());
+				ChartPagerAdapter cpa = new ChartPagerAdapter(getFragmentManager(), chartName);
+				ViewPager viewPager = (ViewPager)findViewById(R.id.chart_pager);
+				viewPager.setAdapter(cpa);
 			}else if(chartName.equalsIgnoreCase("movies")){
 				setFragment(args, new MovieRentWebViewFragment());
 			}else if(chartName.equalsIgnoreCase("programs")){
-				Toast.makeText(MainActivity.this, "No view for "+chartName+" is implemented yet.", Toast.LENGTH_LONG);				
+				Toast.makeText(MainActivity.this, "No view for "+chartName+" is implemented yet.", Toast.LENGTH_LONG).show();				
 			}else if(chartName.equalsIgnoreCase("widgets")){
-				Toast.makeText(MainActivity.this, "No view for "+chartName+" is implemented yet.", Toast.LENGTH_LONG);
+				setFragment(args, new WidgetShowWebViewFragment());
 			}
 
 			// update selected item and title, then close the drawer
@@ -189,8 +199,8 @@ public class MainActivity extends Activity {
 			fragment.setArguments(args);
 
 			FragmentManager fragmentManager = getFragmentManager();
-			fragmentManager.beginTransaction()
-					.replace(R.id.content_frame, fragment).commit();
+//			fragmentManager.beginTransaction()
+//					.replace(R.id.content_frame, fragment).commit();
 		}
 	}
 

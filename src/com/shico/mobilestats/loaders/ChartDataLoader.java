@@ -74,22 +74,24 @@ public abstract class ChartDataLoader {
 		return col;
 	}
 		
-//	public void getTopView(String restCmd, String from, String to, String options){
-//		String url = new StringBuilder(getBaseUrl()).
-//				append(restCmd).
-//				append("/").append(from).
-//				append("/").append(to).
-//				append("/").append(options).
-//				toString();
-//		
-//		JSONObject cached = getTemporaryCache().get(url);
-//		if(cached == null){
-//			loadChartTopViewData(url);
-//		}else{
-//			setCurrentDataTable(getTemporaryCache().get(url));
-//			sendBroadcast(ChartEvent.SUCCESS);
-//		}
-//	}
+	public void getTopView(String restCmd, String from, String to, String options){
+		String url = new StringBuilder(getBaseUrl()).
+				append(restCmd).
+				append("/").append(from).
+				append("/").append(to).
+				append("/").append(options).
+				toString();
+		
+		JSONObject cached = getTemporaryCache().get(url);
+		if(cached == null){
+			Log.d("ChartDataLoader", "Loading data from server: "+url);
+			loadChartTopViewData(url, getIntent(false, options));
+		}else{
+			currentDataTable = getTemporaryCache().get(url);
+			Log.d("ChartDataLoader", "Loading data from cache: "+url);
+			sendBroadcast(ChartEvent.SUCCESS, getIntent(false, options));
+		}
+	}
 
 	public void getTopViewInBatch(String restCmd, String from, String to, String options){
 		String url = new StringBuilder(getBaseUrl()).
@@ -102,15 +104,15 @@ public abstract class ChartDataLoader {
 		JSONObject cached = getTemporaryCache().get(url);
 		if(cached == null){
 			Log.d("ChartDataLoader", "Loading data from server: "+url);
-			loadChartTopViewDataInBatch(url);
+			loadChartTopViewDataInBatch(url, getIntent(true, options));
 		}else{
 			currentDataTable = getTemporaryCache().get(url);
 			Log.d("ChartDataLoader", "Loading data from cache: "+url);
-			sendBroadcast(ChartEvent.SUCCESS);
+			sendBroadcast(ChartEvent.SUCCESS, getIntent(true, options));
 		}
 	}
 
-	public void loadChartTopViewDataInBatch(final String url){
+	public void loadChartTopViewDataInBatch(final String url, final Intent intent){
 		client.get(url, new JsonHttpResponseHandler(){
 			@Override
 			public void onSuccess(JSONObject res) {
@@ -129,56 +131,51 @@ public abstract class ChartDataLoader {
 					getTemporaryCache().put(url, currentDataTable);
 					temporaryRowCache = null;
 				} catch (JSONException e) {
-					sendBroadcast(ChartEvent.FAILURE);
+					sendBroadcast(ChartEvent.FAILURE, intent);
 					return;
 				}
-				sendBroadcast(ChartEvent.SUCCESS);
+				sendBroadcast(ChartEvent.SUCCESS, intent);
 			}
 
 			@Override
 			public void onFailure(Throwable t, JSONObject arg1) {
-				Log.e("ChartDataLoader", "Failed to retrieve data for "+getIntentAction()+". "+(t != null ? t.getMessage() : ""));
-				sendBroadcast(ChartEvent.FAILURE);
+				Log.e("ChartDataLoader", "Failed to retrieve data for "+intent.toString()+". "+(t != null ? t.getMessage() : ""));
+				sendBroadcast(ChartEvent.FAILURE, intent);
 			}
 		});		
 	}
 	
-//	public void loadChartTopViewData(final String url){
-//		client.get(url, new JsonHttpResponseHandler(){
-//			@Override
-//			public void onSuccess(JSONObject res) {
-//				try {
-//					// empty the datatable rows
-//					newDataTable().put("rows", new JSONArray());
-//
-//					JSONArray rows = res.getJSONArray("rows");					
-//					for(int i=0; i< rows.length(); i++){
-//						JSONArray row = rows.getJSONObject(i).getJSONArray("result");
-//						newDataTable().getJSONArray("rows").put(row);
-//					}
-//					getTemporaryCache().put(url, newDataTable());
-//					temporaryRowCache = null;
-//				} catch (JSONException e) {
-//					sendBroadcast(ChartEvent.FAILURE);
-//					return;
-//				}
-//				sendBroadcast(ChartEvent.SUCCESS);
-//			}
-//
-//			@Override
-//			public void onFailure(Throwable t, JSONObject arg1) {
-//				Log.e("ChartDataLoader", "Failed to retrieve data for "+getIntentAction()+". "+(t != null ? t.getMessage() : ""));
-//				sendBroadcast(ChartEvent.FAILURE);
-//			}
-//		});
-//	}
-		
-	private String getIntentAction() {
-		return ChartEvent.STATS_EVENT_DATA;
-	}
+	public void loadChartTopViewData(final String url, final Intent intent){
+		client.get(url, new JsonHttpResponseHandler(){
+			@Override
+			public void onSuccess(JSONObject res) {
+				try {
+					JSONObject newDataTable = newBatchDataTable();
 
-	private void sendBroadcast(int status){
-		Intent intent = new Intent(getIntentAction());
+					JSONArray rows = res.getJSONArray("rows");					
+					for(int i=0; i< rows.length(); i++){
+						JSONArray row = rows.getJSONObject(i).getJSONArray("result");
+						newDataTable.getJSONArray("rows").put(row);
+					}
+					currentDataTable = newDataTable;
+					getTemporaryCache().put(url, currentDataTable);
+					temporaryRowCache = null;
+				} catch (JSONException e) {
+					sendBroadcast(ChartEvent.FAILURE, intent);
+					return;
+				}
+				sendBroadcast(ChartEvent.SUCCESS, intent);
+			}
+
+			@Override
+			public void onFailure(Throwable t, JSONObject arg1) {
+				Log.e("ChartDataLoader", "Failed to retrieve data for "+intent.toString()+". "+(t != null ? t.getMessage() : ""));
+				sendBroadcast(ChartEvent.FAILURE, intent);
+			}
+		});
+	}
+		
+	private void sendBroadcast(int status, Intent intent){
 		intent.putExtra(ChartEvent.DATA_LOAD_STATUS, status);
 		LocalBroadcastManager.getInstance(context).sendBroadcast(intent);
 	}
@@ -247,5 +244,14 @@ public abstract class ChartDataLoader {
 			temporaryCache = new ConcurrentHashMap<String, JSONObject>();
 		}
 		return temporaryCache;
+	}
+	
+	private Intent getIntent(boolean groupped, String options){
+		Intent intent = new Intent(ChartEvent.STATS_EVENT_DATA);
+		intent.addCategory(options);
+		if(groupped){
+			intent.addCategory(ChartEvent.GROUP_VIEW_DATA);
+		}
+		return intent;
 	}
 }

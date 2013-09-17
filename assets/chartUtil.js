@@ -1,4 +1,4 @@
-      function drawColumnChart(jsonData, options){
+      function drawColumnChart(jsonData, options, vaxisId){
 		var chart = new google.visualization.ColumnChart(document.getElementById('chart_div'));
 		var data = new google.visualization.DataTable();
 		
@@ -11,7 +11,7 @@
 			data.addRow(rows[i]);
 		}
 		
-		var processedData = getColumnChartView(data, 3);  // 3 = viewers index
+		var processedData = getColumnChartView(data, vaxisId);  // 3 = viewers index, 4 = duration index
 		console.log('Processed DataTable.. Drawing');
 	    chart.draw(processedData, options);      
       }    
