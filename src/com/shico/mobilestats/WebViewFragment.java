@@ -1,6 +1,9 @@
 package com.shico.mobilestats;
 
+import java.util.Map;
+
 import org.json.JSONException;
+import org.json.JSONObject;
 
 import android.annotation.SuppressLint;
 import android.app.Fragment;
@@ -22,6 +25,7 @@ import android.view.LayoutInflater;
 import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewGroup;
+import android.webkit.JavascriptInterface;
 import android.webkit.WebChromeClient;
 import android.webkit.WebSettings;
 import android.webkit.WebView;
@@ -55,11 +59,8 @@ public abstract class WebViewFragment extends Fragment implements OnSharedPrefer
 	private ProgressDialog progressDiag;
 
 	protected abstract void addJavascriptInterface(WebView view);
-	protected abstract String getColumnChartViewHtml();	
-	// specific methods for view pages (fragments of same type but with different views)
-	protected abstract void loadData();
-	protected abstract IntentFilter getBroadcastReceiverFilter();
-	protected abstract boolean match(Intent intent);
+	protected abstract Map<Integer, String> getViewPageHtmlMap();
+	protected abstract String getEventType();
 	
 	protected int viewpage;
 	
@@ -209,7 +210,7 @@ public abstract class WebViewFragment extends Fragment implements OnSharedPrefer
 			if(progressDiag != null){
 				progressDiag.setMessage("Loading data...");
 			}
-			loadData();
+			loadChartData();
 		}
 		
 		// Broadcast receiver
@@ -337,7 +338,84 @@ public abstract class WebViewFragment extends Fragment implements OnSharedPrefer
 		progressDiag = new ProgressDialog(getActivity(), ProgressDialog.STYLE_HORIZONTAL); 
 		progressDiag.setMessage("Loading charts...");
 		progressDiag.show();
-		Log.d("WebViewFragment", "Loading page: "+getColumnChartViewHtml());
-		thisWebView.loadUrl("file:///android_asset/"+getColumnChartViewHtml());
+		Log.d("WebViewFragment", "Loading page: "+getViewPageHtmlMap().get(viewpage));
+		thisWebView.loadUrl("file:///android_asset/"+getViewPageHtmlMap().get(viewpage));
 	}
+	
+	// Methods for supporting ViewPager functionality
+	// ----------------------------------------------
+	protected static final int PRIMARY_PAGE_WITH_COLUMN_CHART_VIEWERS = 0;
+	protected static final int SECONDARY_PAGE_WITH_COLUMN_CHART_DURATION = 1;
+	protected static final int TERNARY_PAGE_WITH_PIE_CHART = 2;	
+
+	protected void loadChartData() {
+		switch(viewpage){
+		case PRIMARY_PAGE_WITH_COLUMN_CHART_VIEWERS:
+			getChartDataLoader().getTopViewInBatch("/viewbatch/"+getEventType(), "2013-02", "2013-05", getLoadOptions());
+			break;
+		case SECONDARY_PAGE_WITH_COLUMN_CHART_DURATION:
+			getChartDataLoader().getTopViewInBatch("/viewbatch/"+getEventType(), "2013-02", "2013-05", getLoadOptions());
+			break;
+		case TERNARY_PAGE_WITH_PIE_CHART:
+			getChartDataLoader().getTopViewInBatch("/view/"+getEventType(), "2013-02", "2013-05", getLoadOptions());
+			break;
+		default:
+			throw new IllegalStateException("ViewPage is out of range.");
+		}		
+	}
+	protected boolean match(Intent intent) {
+		String loadOptions = (String)intent.getExtras().get(ChartEvent.DATA_LOAD_OPTIONS);
+		return getLoadOptions().equals(loadOptions);
+	}
+	protected IntentFilter getBroadcastReceiverFilter() {
+		IntentFilter filter = new IntentFilter(ChartEvent.STATS_EVENT_DATA);
+		if(viewpage != TERNARY_PAGE_WITH_PIE_CHART){
+			filter.addCategory("/viewbatch/"+getEventType());
+		}else{
+			filter.addCategory("/view/"+getEventType());
+		}
+		return filter;
+	}
+	protected String getLoadOptions(){
+		switch(viewpage){
+		case PRIMARY_PAGE_WITH_COLUMN_CHART_VIEWERS:
+			String options = currentChartOptions;
+			if(currentChartOptions.startsWith("duration")){
+				options = "viewers"+currentChartOptions.substring(currentChartOptions.indexOf(','));
+			}
+			return options;
+		case SECONDARY_PAGE_WITH_COLUMN_CHART_DURATION:
+			options = currentChartOptions;
+			if(currentChartOptions.startsWith("viewers")){
+				options = "duration"+currentChartOptions.substring(currentChartOptions.indexOf(','));
+			}
+			return options;
+		case TERNARY_PAGE_WITH_PIE_CHART:
+		default:
+			return currentChartOptions;
+		}
+	}
+
+	// Javascript interface methods
+	@JavascriptInterface
+	public String getData(){
+		return getChartDataLoader().getCurrentDataTable().toString();
+	}
+	
+	@JavascriptInterface
+	public String getOptions() throws JSONException{
+		switch(viewpage){
+		case PRIMARY_PAGE_WITH_COLUMN_CHART_VIEWERS:
+			return new JSONObject("{title: 'Live Usage (Channels)', "+ 	 
+					"hAxis: {title: 'Time'}, "+
+					"vAxis: {title: 'Viewers'}}").toString();
+		case SECONDARY_PAGE_WITH_COLUMN_CHART_DURATION:
+			return new JSONObject("{title: 'Live Usage (Channels)', "+ 	 
+					"hAxis: {title: 'Time'}, "+
+					"vAxis: {title: 'Total Watched Hours'}}").toString();
+		case TERNARY_PAGE_WITH_PIE_CHART:
+		default:
+			return new JSONObject("{title: 'Live Usage (Channels)'}").toString();
+		}
+	}  
 }

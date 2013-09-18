@@ -13,10 +13,12 @@ import com.shico.mobilestats.WidgetShowWebViewFragment;
 
 public class ChartPagerAdapter extends FragmentPagerAdapter {
 	private String chartName;
+	private int chartId;
 	
-	public ChartPagerAdapter(FragmentManager fm, String chartName) {
+	public ChartPagerAdapter(FragmentManager fm, String chartName, int chartId) {
 		super(fm);
 		this.chartName = chartName;
+		this.chartId = chartId;
 	}
 
 	@Override
@@ -43,6 +45,24 @@ public class ChartPagerAdapter extends FragmentPagerAdapter {
 	@Override
 	public int getCount() {
 		return 2;
+	}
+
+	@Override
+	public long getItemId(int position) {
+		return (chartId*100)+position;
+	}	
+
+	@Override
+	public int getItemPosition(Object object) {
+		return POSITION_NONE;
+	}
+
+	public void setChartName(String chartName) {
+		this.chartName = chartName;
+	}
+
+	public void setChartId(int chartId) {
+		this.chartId = chartId;
 	}
 
 }

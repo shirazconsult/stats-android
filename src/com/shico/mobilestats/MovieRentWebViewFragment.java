@@ -1,75 +1,54 @@
 package com.shico.mobilestats;
 
+import java.util.HashMap;
+import java.util.Map;
+
 import org.json.JSONException;
+import org.json.JSONObject;
 
-import android.content.Intent;
-import android.content.IntentFilter;
-import android.os.Bundle;
-import android.util.Log;
+import android.webkit.JavascriptInterface;
 import android.webkit.WebView;
-import android.widget.Toast;
-
-import com.shico.mobilestats.loaders.ChartDataLoader;
-import com.shico.mobilestats.loaders.MovieRentChartDataLoader;
 
 public class MovieRentWebViewFragment extends WebViewFragment {	
-	private static final String COLUMN_CHART_HTML = "MovieRent.html";
 	private static final String EVENT_TYPE = "movieRent";
+	private static final String COLUMN_CHART_HTML_VIEWERS = "MovieRent_columnchart_viewers.html";
+	private static final String COLUMN_CHART_HTML_DURATION = "MovieRent_columnchart_duration.html";
+	private static final String PIE_CHART_HTML = "MovieRent_piechart.html";
 	
-	private MovieRentChartDataLoader movieRentChartDataLoader; 
-		
+	private Map<Integer, String> viewPageHtmlMap;
 	
-	@Override
-	public void onCreate(Bundle savedInstanceState) {
-		super.onCreate(savedInstanceState);
-		try {
-			movieRentChartDataLoader = new MovieRentChartDataLoader(getActivity());
-			if(savedInstanceState != null){
-				movieRentChartDataLoader.onRestoreInstanceState(savedInstanceState);
-			}
-		} catch (JSONException e) {
-			Log.e("WebViewFragment", "Failed to instantiate MovieRentChartDataLoader.");
-			Toast.makeText(getActivity(), "Failed to instantiate MovieRentChartDataLoader.", Toast.LENGTH_LONG).show();
-		}
-	}
-
-	@Override
-	public void onSaveInstanceState(Bundle outState) {
-		super.onSaveInstanceState(outState);
-		movieRentChartDataLoader.onSaveInstanceState(outState);
-	}
-
-	@Override
-	protected ChartDataLoader getChartDataLoader() {
-		return movieRentChartDataLoader;
-	}
-
 	@Override
 	protected void addJavascriptInterface(WebView view) {
-		view.addJavascriptInterface(movieRentChartDataLoader, "MovieRentChartDataLoader");
+		view.addJavascriptInterface(this, "MovieRentWebView");
 	}
 
 	@Override
-	protected String getColumnChartViewHtml() {
-		return COLUMN_CHART_HTML;
+	protected Map<Integer, String> getViewPageHtmlMap() {
+		if(viewPageHtmlMap == null){
+			viewPageHtmlMap = new HashMap<Integer, String>();
+			viewPageHtmlMap.put(PRIMARY_PAGE_WITH_COLUMN_CHART_VIEWERS, COLUMN_CHART_HTML_VIEWERS);
+			viewPageHtmlMap.put(SECONDARY_PAGE_WITH_COLUMN_CHART_DURATION, COLUMN_CHART_HTML_DURATION);
+			viewPageHtmlMap.put(TERNARY_PAGE_WITH_PIE_CHART, PIE_CHART_HTML);
+		}
+		return viewPageHtmlMap;
 	}
 
 	@Override
-	protected void loadData() {
-		// TODO Auto-generated method stub
-		
-	}
-
-	@Override
-	protected IntentFilter getBroadcastReceiverFilter() {
-		// TODO Auto-generated method stub
-		return null;
-	}
-
-	@Override
-	protected boolean match(Intent intent) {
-		// TODO Auto-generated method stub
-		return false;
-	}
+	protected String getEventType() {
+		return EVENT_TYPE;
+	}	
 	
+	@JavascriptInterface
+	public String getOptions() throws JSONException{
+		switch(viewpage){
+		case PRIMARY_PAGE_WITH_COLUMN_CHART_VIEWERS:
+			return new JSONObject("{title: 'Movie Rents', "+ 	 
+					"hAxis: {title: 'Time'}, "+
+					"vAxis: {title: 'Total Movie Rents'}}").toString();
+		case SECONDARY_PAGE_WITH_COLUMN_CHART_DURATION:
+		case TERNARY_PAGE_WITH_PIE_CHART:
+		default:
+			return new JSONObject("{title: 'Movie Rents'}").toString();
+		}
+	} 	
 }
