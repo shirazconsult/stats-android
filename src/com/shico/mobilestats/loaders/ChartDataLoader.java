@@ -23,9 +23,8 @@ import com.loopj.android.http.AsyncHttpClient;
 import com.loopj.android.http.JsonHttpResponseHandler;
 import com.shico.mobilestats.event.ChartEvent;
 
-public abstract class ChartDataLoader {
+public class ChartDataLoader {
 	private static final String CHART_CACHE = "chart_cache";
-	private static final String CHART_DATA = "chart_data";
 	
 	// data index constants
 	public final static int typeIdx = 0; 
@@ -47,7 +46,7 @@ public abstract class ChartDataLoader {
 	private String host;
 	private int port;
 	
-	protected JSONObject currentDataTable;
+	private JSONObject currentDataTable;
 
 	public ChartDataLoader(Context context) throws JSONException {
 		this.context = context;
@@ -85,11 +84,11 @@ public abstract class ChartDataLoader {
 		JSONObject cached = getTemporaryCache().get(url);
 		if(cached == null){
 			Log.d("ChartDataLoader", "Loading data from server: "+url);
-			loadChartTopViewData(url, getIntent(false, options));
+			loadChartTopViewData(url, getIntent(restCmd, options));
 		}else{
 			currentDataTable = getTemporaryCache().get(url);
 			Log.d("ChartDataLoader", "Loading data from cache: "+url);
-			sendBroadcast(ChartEvent.SUCCESS, getIntent(false, options));
+			sendBroadcast(ChartEvent.SUCCESS, getIntent(restCmd, options));
 		}
 	}
 
@@ -104,11 +103,11 @@ public abstract class ChartDataLoader {
 		JSONObject cached = getTemporaryCache().get(url);
 		if(cached == null){
 			Log.d("ChartDataLoader", "Loading data from server: "+url);
-			loadChartTopViewDataInBatch(url, getIntent(true, options));
+			loadChartTopViewDataInBatch(url, getIntent(restCmd, options));
 		}else{
 			currentDataTable = getTemporaryCache().get(url);
 			Log.d("ChartDataLoader", "Loading data from cache: "+url);
-			sendBroadcast(ChartEvent.SUCCESS, getIntent(true, options));
+			sendBroadcast(ChartEvent.SUCCESS, getIntent(restCmd, options));
 		}
 	}
 
@@ -118,7 +117,6 @@ public abstract class ChartDataLoader {
 			public void onSuccess(JSONObject res) {
 				try {
 					JSONObject newDataTable = newBatchDataTable();
-
 					JSONArray rows = res.getJSONArray("result");
 					int rownum = 0;
 					for(int i=0; i< rows.length(); i++){
@@ -131,6 +129,7 @@ public abstract class ChartDataLoader {
 					getTemporaryCache().put(url, currentDataTable);
 					temporaryRowCache = null;
 				} catch (JSONException e) {
+					Log.e("JsonHttpResponseHandler", "Failed to deserialize response for "+url);
 					sendBroadcast(ChartEvent.FAILURE, intent);
 					return;
 				}
@@ -246,12 +245,14 @@ public abstract class ChartDataLoader {
 		return temporaryCache;
 	}
 	
-	private Intent getIntent(boolean groupped, String options){
+	private Intent getIntent(String restCmd, String options){
 		Intent intent = new Intent(ChartEvent.STATS_EVENT_DATA);
-		intent.addCategory(options);
-		if(groupped){
-			intent.addCategory(ChartEvent.GROUP_VIEW_DATA);
-		}
+		intent.addCategory(restCmd);
+		intent.putExtra(ChartEvent.DATA_LOAD_OPTIONS, options);
 		return intent;
+	}
+
+	public JSONObject getCurrentDataTable() {
+		return currentDataTable;
 	}
 }

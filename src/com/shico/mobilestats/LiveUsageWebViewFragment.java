@@ -1,13 +1,14 @@
 package com.shico.mobilestats;
 
 import org.json.JSONException;
+import org.json.JSONObject;
 
+import android.content.Intent;
 import android.content.IntentFilter;
+import android.webkit.JavascriptInterface;
 import android.webkit.WebView;
 
 import com.shico.mobilestats.event.ChartEvent;
-import com.shico.mobilestats.loaders.ChartDataLoader;
-import com.shico.mobilestats.loaders.LiveUsageChartDataLoader;
 
 public class LiveUsageWebViewFragment extends WebViewFragment {	
 	private static final String EVENT_TYPE = "LiveUsage";
@@ -18,23 +19,9 @@ public class LiveUsageWebViewFragment extends WebViewFragment {
 	private static final int SECONDARY_PAGE_WITH_COLUMN_CHART_DURATION = 1;
 	private static final int TERNARY_PAGE_WITH_PIE_CHART = 2;	
 	
-	private LiveUsageChartDataLoader liveUsageChartDataLoader; 
-		
-	@Override
-	protected ChartDataLoader getChartDataLoader() {
-		if(liveUsageChartDataLoader == null){
-			try {
-				liveUsageChartDataLoader = new LiveUsageChartDataLoader(getActivity());
-			} catch (JSONException e) {
-				throw new IllegalStateException("Unable to instantiate "+LiveUsageChartDataLoader.class.getName());
-			}
-		}
-		return liveUsageChartDataLoader;
-	}
-
 	@Override
 	protected void addJavascriptInterface(WebView view) {
-		view.addJavascriptInterface(getChartDataLoader(), "LiveUsageChartDataLoader");
+		view.addJavascriptInterface(this, "LiveUsageWebView");
 	}
 
 	@Override
@@ -51,21 +38,16 @@ public class LiveUsageWebViewFragment extends WebViewFragment {
 	}
 
 	@Override
-	protected String getChartEventType() {
-		return EVENT_TYPE;
-	}
-
-	@Override
 	protected void loadData() {
 		switch(viewpage){
 		case PRIMARY_PAGE_WITH_COLUMN_CHART_VIEWERS:
-			getChartDataLoader().getTopViewInBatch("/viewbatch/"+getChartEventType(), "2013-02", "2013-05", getOptions());
+			getChartDataLoader().getTopViewInBatch("/viewbatch/"+EVENT_TYPE, "2013-02", "2013-05", getLoadOptions());
 			break;
 		case SECONDARY_PAGE_WITH_COLUMN_CHART_DURATION:
-			getChartDataLoader().getTopViewInBatch("/viewbatch/"+getChartEventType(), "2013-02", "2013-05", getOptions());
+			getChartDataLoader().getTopViewInBatch("/viewbatch/"+EVENT_TYPE, "2013-02", "2013-05", getLoadOptions());
 			break;
 		case TERNARY_PAGE_WITH_PIE_CHART:
-			getChartDataLoader().getTopViewInBatch("/view/"+getChartEventType(), "2013-02", "2013-05", getOptions());
+			getChartDataLoader().getTopViewInBatch("/view/"+EVENT_TYPE, "2013-02", "2013-05", getLoadOptions());
 			break;
 		default:
 			throw new IllegalStateException("ViewPage is out of range.");
@@ -75,14 +57,21 @@ public class LiveUsageWebViewFragment extends WebViewFragment {
 	@Override
 	protected IntentFilter getBroadcastReceiverFilter() {
 		IntentFilter filter = new IntentFilter(ChartEvent.STATS_EVENT_DATA);
-		filter.addCategory(getOptions());
 		if(viewpage != TERNARY_PAGE_WITH_PIE_CHART){
-			filter.addCategory(ChartEvent.GROUP_VIEW_DATA);
+			filter.addCategory("/viewbatch/"+EVENT_TYPE);
+		}else{
+			filter.addCategory("/view/"+EVENT_TYPE);
 		}
 		return filter;
 	}
 	
-	private String getOptions(){
+	@Override
+	protected boolean match(Intent intent) {
+		String loadOptions = (String)intent.getExtras().get(ChartEvent.DATA_LOAD_OPTIONS);
+		return getLoadOptions().equals(loadOptions);
+	}
+
+	private String getLoadOptions(){
 		switch(viewpage){
 		case PRIMARY_PAGE_WITH_COLUMN_CHART_VIEWERS:
 			String options = currentChartOptions;
@@ -101,4 +90,29 @@ public class LiveUsageWebViewFragment extends WebViewFragment {
 			return currentChartOptions;
 		}
 	}
+	
+	// Javascript interface methods
+	@JavascriptInterface
+	public String getData(){
+		return getChartDataLoader().getCurrentDataTable().toString();
+	}
+	
+	@JavascriptInterface
+	public String getOptions() throws JSONException{
+		switch(viewpage){
+		case PRIMARY_PAGE_WITH_COLUMN_CHART_VIEWERS:
+			return new JSONObject("{title: 'Live Usage', "+ 	 
+					"hAxis: {title: 'Time'}, "+
+					"vAxis: {title: 'Viewers'}}").toString();
+		case SECONDARY_PAGE_WITH_COLUMN_CHART_DURATION:
+			return new JSONObject("{title: 'Live Usage', "+ 	 
+					"hAxis: {title: 'Time'}, "+
+					"vAxis: {title: 'Duration'}}").toString();
+		case TERNARY_PAGE_WITH_PIE_CHART:
+		default:
+			return new JSONObject("{title: 'Live Usage'}").toString();
+		}
+	
+	}    
+
 }

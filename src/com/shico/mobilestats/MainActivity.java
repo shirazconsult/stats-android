@@ -3,16 +3,13 @@ package com.shico.mobilestats;
 import android.app.Activity;
 import android.app.Fragment;
 import android.app.FragmentManager;
-import android.content.Context;
 import android.content.res.Configuration;
 import android.os.Bundle;
 import android.preference.PreferenceManager;
 import android.support.v4.app.ActionBarDrawerToggle;
 import android.support.v4.view.ViewPager;
 import android.support.v4.widget.DrawerLayout;
-import android.util.AttributeSet;
 import android.view.Gravity;
-import android.view.LayoutInflater;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
@@ -34,8 +31,9 @@ public class MainActivity extends Activity {
 	private CharSequence mDrawerMenuTitle;
 	private CharSequence mTitle;
 	private String[] mDrawerMenuItems;
-
-	private ViewPager mViewPager;
+	
+	private int lastSelectedGroupPosition;
+	private String lastSelectedChildItem;
 	
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
@@ -85,10 +83,23 @@ public class MainActivity extends Activity {
 
 		if (savedInstanceState == null) {
 			mMenuDrawer.setSelectedGroup(0);
-		}		
-		
-		
+		}else{
+			lastSelectedGroupPosition = savedInstanceState.getInt(ARG_MENU_ITEM_IDX);
+			lastSelectedChildItem = savedInstanceState.getString(ARG_MENU_CHART_ITEM_NAME);
+			if(lastSelectedGroupPosition == MenuAdapter.CHARTS_MENU_IDX){
+				newChartViewPager(lastSelectedChildItem);				
+			}
+		}
 	}
+
+	@Override
+	protected void onSaveInstanceState(Bundle outState) {
+		outState.putInt(ARG_MENU_ITEM_IDX, lastSelectedGroupPosition);
+		outState.putString(ARG_MENU_CHART_ITEM_NAME, lastSelectedChildItem);
+		
+		super.onSaveInstanceState(outState);
+	}
+
 
 	@Override
 	public boolean onCreateOptionsMenu(Menu menu) {
@@ -111,6 +122,13 @@ public class MainActivity extends Activity {
 		}
 	}
 
+	private ViewPager newChartViewPager(String chartName){
+		ChartPagerAdapter cpa = new ChartPagerAdapter(getFragmentManager(), chartName);
+		ViewPager viewPager = (ViewPager)findViewById(R.id.chart_pager);
+		viewPager.setAdapter(cpa);
+		return viewPager;
+	}
+	
 	/* The click listner for ListView in the navigation drawer */
 	private class MenuItemClickListener implements
 			ExpandableListView.OnChildClickListener,
@@ -127,10 +145,7 @@ public class MainActivity extends Activity {
 			args.putString(ARG_MENU_CHART_ITEM_NAME, chartName);
 			
 			if(chartName.equalsIgnoreCase("channels")){				
-//				setFragment(args, new LiveUsageWebViewFragment());
-				ChartPagerAdapter cpa = new ChartPagerAdapter(getFragmentManager(), chartName);
-				ViewPager viewPager = (ViewPager)findViewById(R.id.chart_pager);
-				viewPager.setAdapter(cpa);
+				newChartViewPager(chartName);
 			}else if(chartName.equalsIgnoreCase("movies")){
 				setFragment(args, new MovieRentWebViewFragment());
 			}else if(chartName.equalsIgnoreCase("programs")){
@@ -144,6 +159,8 @@ public class MainActivity extends Activity {
 			setTitle(chartName);
 			mDrawerLayout.closeDrawer(mMenuDrawer);
 
+			lastSelectedGroupPosition = groupPosition;
+			lastSelectedChildItem = chartName;
 			return true;
 		}
 
@@ -190,7 +207,8 @@ public class MainActivity extends Activity {
 			if (groupPosition != MenuAdapter.CHARTS_MENU_IDX) {
 				mDrawerLayout.closeDrawer(mMenuDrawer);
 			}
-			
+
+			lastSelectedGroupPosition = groupPosition;
 			return true;
 		}
 
@@ -222,5 +240,5 @@ public class MainActivity extends Activity {
 		super.onConfigurationChanged(newConfig);
 		// Pass any configuration change to the drawer toggls
 		mDrawerToggle.onConfigurationChanged(newConfig);
-	}
+	}	
 }

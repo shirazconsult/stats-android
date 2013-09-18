@@ -23,6 +23,7 @@ import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewGroup;
 import android.webkit.WebChromeClient;
+import android.webkit.WebSettings;
 import android.webkit.WebView;
 import android.webkit.WebViewClient;
 import android.widget.ListView;
@@ -51,17 +52,14 @@ public abstract class WebViewFragment extends Fragment implements OnSharedPrefer
 	private DisplayMetrics metrics;
 	protected String currentChartName;
 	protected String currentChartOptions;
-//	protected boolean groupView;
 	private ProgressDialog progressDiag;
 
-	protected abstract ChartDataLoader getChartDataLoader();
 	protected abstract void addJavascriptInterface(WebView view);
-	protected abstract String getColumnChartViewHtml();
-	protected abstract String getChartEventType();
-	
+	protected abstract String getColumnChartViewHtml();	
 	// specific methods for view pages (fragments of same type but with different views)
 	protected abstract void loadData();
 	protected abstract IntentFilter getBroadcastReceiverFilter();
+	protected abstract boolean match(Intent intent);
 	
 	protected int viewpage;
 	
@@ -81,13 +79,13 @@ public abstract class WebViewFragment extends Fragment implements OnSharedPrefer
 
 	@Override
 	public void onSaveInstanceState(Bundle outState) {
-		super.onSaveInstanceState(outState);
 		outState.putString(CHART_NAME, currentChartName);
 		outState.putString(CHART_OPTIONS, currentChartOptions);
 		outState.putString(ARG_CHART_URL, currentURL);		
 		outState.putInt(ARG_CHART_VIEWPAGE, viewpage);
 		
 		getChartDataLoader().onSaveInstanceState(outState);
+		super.onSaveInstanceState(outState);
 	}
 
 	@SuppressLint("SetJavaScriptEnabled")
@@ -101,6 +99,10 @@ public abstract class WebViewFragment extends Fragment implements OnSharedPrefer
 		thisWebView.getSettings().setJavaScriptEnabled(true);
 		thisWebView.setWebViewClient(myWebClient);
 		thisWebView.setWebChromeClient(new WebChromeClient());
+		thisWebView.getSettings().setCacheMode(WebSettings.LOAD_CACHE_ELSE_NETWORK);
+		thisWebView.getSettings().setBuiltInZoomControls(true);
+		thisWebView.getSettings().setSupportZoom(true);
+		thisWebView.getSettings().setDisplayZoomControls(true);
 		addJavascriptInterface(thisWebView);
 		
 		setGestureListener(v, thisWebView);
@@ -119,30 +121,18 @@ public abstract class WebViewFragment extends Fragment implements OnSharedPrefer
 		return v;
 	}
 	
-//	private void showSecondChartFragment() {
-//		Bundle args = new Bundle();
-//		args.putString(MainActivity.ARG_MENU_CHART_ITEM_NAME, currentChartName);
-//		args.putBoolean(WebViewFragment.ARG_CHART_GROUP_VIEW, false);
-//
-//		WebViewFragment secondFragment = null;
-//		if(currentChartName.equalsIgnoreCase("channels")){				
-//			secondFragment = new LiveUsageWebViewFragment();
-//		}else if(currentChartName.equalsIgnoreCase("movies")){
-//			secondFragment = new MovieRentWebViewFragment();
-//		}else if(currentChartName.equalsIgnoreCase("programs")){
-//			Toast.makeText(getActivity(), "No view for "+currentChartName+" is implemented yet.", Toast.LENGTH_LONG).show();				
-//		}else if(currentChartName.equalsIgnoreCase("widgets")){
-//			secondFragment = new WidgetShowWebViewFragment();
-//		}
-//
-//		secondFragment.setArguments(args);
-//
-//		FragmentManager fragmentManager = getFragmentManager();
-//		fragmentManager.beginTransaction()
-//				.replace(R.id.content_frame, secondFragment).commit();
-//
-//	}
-
+	protected ChartDataLoader chartDataLoader; 
+	protected ChartDataLoader getChartDataLoader() {
+		if(chartDataLoader == null){
+			try {
+				chartDataLoader = new ChartDataLoader(getActivity());
+			} catch (JSONException e) {
+				throw new IllegalStateException("Unable to instantiate "+ChartDataLoader.class.getName());
+			}
+		}
+		return chartDataLoader;
+	}
+	
 	private static final int swipe_Min_Distance = 100;
 	private static final int swipe_Max_Distance = 350;
 	private static final int swipe_Min_Velocity = 100;
@@ -171,7 +161,6 @@ public abstract class WebViewFragment extends Fragment implements OnSharedPrefer
 						&& xDistance > swipe_Min_Distance) {
 					if (e1.getX() > e2.getX()){ // right to left
 						// swipe to left
-//						showSecondChartFragment();
 					}else{
 						// swipe to right
 					}
@@ -218,7 +207,7 @@ public abstract class WebViewFragment extends Fragment implements OnSharedPrefer
 		public void onPageFinished(WebView view, String url) {
 			this.view = view;
 			if(progressDiag != null){
-				progressDiag.setMessage("Loading statistics data...:"+viewpage);
+				progressDiag.setMessage("Loading data...");
 			}
 			loadData();
 		}
@@ -227,6 +216,9 @@ public abstract class WebViewFragment extends Fragment implements OnSharedPrefer
 		public class EventReceiver extends BroadcastReceiver{		
 			@Override
 			public void onReceive(Context context, Intent intent) {
+				if(!match(intent)){
+					return;
+				}
 				int status = intent.getExtras().getInt(ChartEvent.DATA_LOAD_STATUS);
 				if(status == ChartEvent.FAILURE){
 					Toast.makeText(context, "Failed to load data.", Toast.LENGTH_SHORT).show();
@@ -235,10 +227,10 @@ public abstract class WebViewFragment extends Fragment implements OnSharedPrefer
 				if(view != null){
 					try{
 						if(progressDiag != null){
-							progressDiag.setMessage("Drawing chart...:"+viewpage);
-						}
-						
+							progressDiag.setMessage("Drawing charts...");
+						}						
 						Log.d("WebViewFragment", viewpage+": Received event. Drawing chart and table."+intent.toString());
+						
 						// chart					
 						view.loadUrl("javascript:drawChart()");
 					
@@ -343,9 +335,9 @@ public abstract class WebViewFragment extends Fragment implements OnSharedPrefer
 	
 	private void loadChartView(){
 		progressDiag = new ProgressDialog(getActivity(), ProgressDialog.STYLE_HORIZONTAL); 
-		progressDiag.setMessage(viewpage+": Loading chart library ...");
+		progressDiag.setMessage("Loading charts...");
 		progressDiag.show();
-		Log.d("WebViewFragment", viewpage+": Loading page: "+getColumnChartViewHtml());
+		Log.d("WebViewFragment", "Loading page: "+getColumnChartViewHtml());
 		thisWebView.loadUrl("file:///android_asset/"+getColumnChartViewHtml());
 	}
 }

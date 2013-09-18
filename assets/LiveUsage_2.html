@@ -4,13 +4,28 @@
     <script type="text/javascript" src="chartUtil.js"></script>
     <script type="text/javascript">
     	google.load("visualization", "1", {packages:["corechart"]});     
-
-	  function drawChart(){
-      	var options = JSON.parse(LiveUsageChartDataLoader.getOptions());
-		var jsonData = JSON.parse(LiveUsageChartDataLoader.getData());
+		var ready = 1;
+		google.setOnLoadCallback(sayReady);
 		
-		drawColumnChart(jsonData, options, 4);  // vaxisIdx = 4 = duration
-      }      
+		function sayReady(){
+			ready = 0;
+			console.log('Loaded corechart package');
+		}
+	  
+	  	function drawChart(){  	      		
+      		var options = JSON.parse(LiveUsageWebView.getOptions());
+			var jsonData = JSON.parse(LiveUsageWebView.getData());
+		
+			setTimeout(
+				function(){
+					if(ready == 0){
+						console.log('Drawing chart....');						
+						drawColumnChart(jsonData, options, 4); // vaxis=4 (duration)
+					}else{
+						console.log('Waiting for google charts to be loaded...');
+					}
+				}, 100*ready);
+      	}      
     </script>
   </head>
   <body>

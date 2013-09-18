@@ -2,6 +2,7 @@ package com.shico.mobilestats;
 
 import org.json.JSONException;
 
+import android.content.Intent;
 import android.content.IntentFilter;
 import android.os.Bundle;
 import android.util.Log;
@@ -9,7 +10,6 @@ import android.webkit.WebView;
 import android.widget.Toast;
 
 import com.shico.mobilestats.loaders.ChartDataLoader;
-import com.shico.mobilestats.loaders.LiveUsageChartDataLoader;
 import com.shico.mobilestats.loaders.MovieRentChartDataLoader;
 
 public class MovieRentWebViewFragment extends WebViewFragment {	
@@ -55,11 +55,6 @@ public class MovieRentWebViewFragment extends WebViewFragment {
 	}
 
 	@Override
-	protected String getChartEventType() {
-		return EVENT_TYPE;
-	}
-
-	@Override
 	protected void loadData() {
 		// TODO Auto-generated method stub
 		
@@ -70,4 +65,11 @@ public class MovieRentWebViewFragment extends WebViewFragment {
 		// TODO Auto-generated method stub
 		return null;
 	}
+
+	@Override
+	protected boolean match(Intent intent) {
+		// TODO Auto-generated method stub
+		return false;
+	}
+	
 }

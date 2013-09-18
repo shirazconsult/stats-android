@@ -16,7 +16,7 @@ public class MovieRentChartDataLoader extends ChartDataLoader {
 	// Javascript interface methods
 	@JavascriptInterface
 	public String getData(){
-		return currentDataTable.toString();
+		return getCurrentDataTable().toString();
 	}
 	@JavascriptInterface
 	public String getOptions() throws JSONException{

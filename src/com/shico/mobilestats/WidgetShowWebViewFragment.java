@@ -2,6 +2,7 @@ package com.shico.mobilestats;
 
 import org.json.JSONException;
 
+import android.content.Intent;
 import android.content.IntentFilter;
 import android.os.Bundle;
 import android.util.Log;
@@ -54,11 +55,6 @@ public class WidgetShowWebViewFragment extends WebViewFragment {
 	}
 
 	@Override
-	protected String getChartEventType() {
-		return EVENT_TYPE;
-	}
-
-	@Override
 	protected void loadData() {
 		// TODO Auto-generated method stub
 		
@@ -69,4 +65,11 @@ public class WidgetShowWebViewFragment extends WebViewFragment {
 		// TODO Auto-generated method stub
 		return null;
 	}
+
+	@Override
+	protected boolean match(Intent intent) {
+		// TODO Auto-generated method stub
+		return false;
+	}
+	
 }
