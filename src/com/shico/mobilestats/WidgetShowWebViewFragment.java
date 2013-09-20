@@ -6,13 +6,20 @@ import java.util.Map;
 import org.json.JSONException;
 import org.json.JSONObject;
 
+import android.content.IntentFilter;
 import android.webkit.JavascriptInterface;
 import android.webkit.WebView;
 
+import com.shico.mobilestats.event.ChartEvent;
+
 public class WidgetShowWebViewFragment extends WebViewFragment {	
 	private static final String EVENT_TYPE = "widgetShow";	
-	private static final String COLUMN_CHART_HTML_VIEWERS = "WidgetShow_columnchart_viewers.html";
-	private static final String COLUMN_CHART_HTML_DURATION = "WidgetShow_columnchart_duration.html";
+	protected static final int FIRST_PAGE_WITH_GROUPED_COLUMN_CHART = 0;
+	protected static final int SECOND_PAGE_WITH_SIMPLE_COLUMN_CHART = 1;
+	protected static final int THIRD_PAGE_WITH_PIE_CHART = 2;	
+	
+	private static final String GROUPED_COLUMN_CHART_HTML = "WidgetShow_grouped_columnchart.html";
+	private static final String SIMPLE_COLUMN_CHART_HTML = "WidgetShow_simple_columnchart.html";
 	private static final String PIE_CHART_HTML = "WidgetShow_piechart.html";
 	
 	private Map<Integer, String> viewPageHtmlMap;
@@ -23,32 +30,54 @@ public class WidgetShowWebViewFragment extends WebViewFragment {
 	}
 	
 	@Override
-	protected String getEventType() {
-		return EVENT_TYPE;
+	public IntentFilter getBroadcastReceiverFilter() {
+		IntentFilter filter = new IntentFilter(ChartEvent.STATS_EVENT_DATA);
+		switch(viewpage){
+		case FIRST_PAGE_WITH_GROUPED_COLUMN_CHART:
+			filter.addCategory("/viewbatch/"+EVENT_TYPE);
+			break;
+		default:
+			filter.addCategory("/view/"+EVENT_TYPE);
+		}
+		return filter;
 	}
 
 	@Override
 	protected Map<Integer, String> getViewPageHtmlMap() {
 		if(viewPageHtmlMap == null){
 			viewPageHtmlMap = new HashMap<Integer, String>();
-			viewPageHtmlMap.put(PRIMARY_PAGE_WITH_COLUMN_CHART_VIEWERS, COLUMN_CHART_HTML_VIEWERS);
-			viewPageHtmlMap.put(SECONDARY_PAGE_WITH_COLUMN_CHART_DURATION, COLUMN_CHART_HTML_DURATION);
-			viewPageHtmlMap.put(TERNARY_PAGE_WITH_PIE_CHART, PIE_CHART_HTML);
+			viewPageHtmlMap.put(FIRST_PAGE_WITH_GROUPED_COLUMN_CHART, GROUPED_COLUMN_CHART_HTML);
+			viewPageHtmlMap.put(SECOND_PAGE_WITH_SIMPLE_COLUMN_CHART, SIMPLE_COLUMN_CHART_HTML);
+			viewPageHtmlMap.put(THIRD_PAGE_WITH_PIE_CHART, PIE_CHART_HTML);
 		}
 		return viewPageHtmlMap;
+	}
+		
+	@Override
+	protected void loadChartData() {
+		switch(viewpage){
+		case FIRST_PAGE_WITH_GROUPED_COLUMN_CHART:
+			getChartDataLoader().getTopViewInBatch("/viewbatch/"+EVENT_TYPE, "2013-02", "2013-05", getLoadOptions());
+			break;
+		default:
+			getChartDataLoader().getTopView("/view/"+EVENT_TYPE, "2013-02", "2013-05", getLoadOptions());
+		}		
 	}
 	
 	@JavascriptInterface
 	public String getOptions() throws JSONException{
 		switch(viewpage){
-		case PRIMARY_PAGE_WITH_COLUMN_CHART_VIEWERS:
+		case FIRST_PAGE_WITH_GROUPED_COLUMN_CHART:
 			return new JSONObject("{title: 'Widget Activations', "+ 	 
 					"hAxis: {title: 'Time'}, "+
 					"vAxis: {title: 'Total Widget Activations'}}").toString();
-		case SECONDARY_PAGE_WITH_COLUMN_CHART_DURATION:
-		case TERNARY_PAGE_WITH_PIE_CHART:
+		case SECOND_PAGE_WITH_SIMPLE_COLUMN_CHART:
+			return new JSONObject("{title: 'Widget Activations', "+ 	 
+					"vAxis: {title: 'Total Widget Activations'}}").toString();
 		default:
-			return new JSONObject("{title: 'Widget Activations'}").toString();
+			return new JSONObject(
+					"{title: 'Widget Activations - Total Activations'," +
+					"is3D: true}").toString();
 		}
 	}  
 	

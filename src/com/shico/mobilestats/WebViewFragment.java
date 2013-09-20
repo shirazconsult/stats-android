@@ -3,7 +3,6 @@ package com.shico.mobilestats;
 import java.util.Map;
 
 import org.json.JSONException;
-import org.json.JSONObject;
 
 import android.annotation.SuppressLint;
 import android.app.Fragment;
@@ -57,10 +56,6 @@ public abstract class WebViewFragment extends Fragment implements OnSharedPrefer
 	protected String currentChartName;
 	protected String currentChartOptions;
 	private ProgressDialog progressDiag;
-
-	protected abstract void addJavascriptInterface(WebView view);
-	protected abstract Map<Integer, String> getViewPageHtmlMap();
-	protected abstract String getEventType();
 	
 	protected int viewpage;
 	
@@ -112,6 +107,7 @@ public abstract class WebViewFragment extends Fragment implements OnSharedPrefer
 		viewpage = getArguments().getInt(ARG_CHART_VIEWPAGE);
 		updateCurrentChartOptions(PreferenceManager.getDefaultSharedPreferences(getActivity()));
 		if(currentChartName != null){
+			Log.d("WVF.onCreateView", ">>>>>>>>>>>> Loading chart "+viewpage+"<<<<<<<<<<<<");
 			loadChartView();
 		}
 		
@@ -126,7 +122,7 @@ public abstract class WebViewFragment extends Fragment implements OnSharedPrefer
 	protected ChartDataLoader getChartDataLoader() {
 		if(chartDataLoader == null){
 			try {
-				chartDataLoader = new ChartDataLoader(getActivity());
+				chartDataLoader = new ChartDataLoader(this, viewpage);
 			} catch (JSONException e) {
 				throw new IllegalStateException("Unable to instantiate "+ChartDataLoader.class.getName());
 			}
@@ -192,8 +188,6 @@ public abstract class WebViewFragment extends Fragment implements OnSharedPrefer
 	}
 
 	public class MyWebClient extends WebViewClient {
-		private WebView view;
-		
 		private BroadcastReceiver eventReceiver;
 		public MyWebClient() {
 			super();
@@ -206,7 +200,7 @@ public abstract class WebViewFragment extends Fragment implements OnSharedPrefer
 
 		@Override
 		public void onPageFinished(WebView view, String url) {
-			this.view = view;
+			Log.d("WebViewFragment", ">>>> Finished page load for "+currentChartName+" page "+viewpage);
 			if(progressDiag != null){
 				progressDiag.setMessage("Loading data...");
 			}
@@ -225,7 +219,7 @@ public abstract class WebViewFragment extends Fragment implements OnSharedPrefer
 					Toast.makeText(context, "Failed to load data.", Toast.LENGTH_SHORT).show();
 					return;
 				}
-				if(view != null){
+				if(thisWebView != null){
 					try{
 						if(progressDiag != null){
 							progressDiag.setMessage("Drawing charts...");
@@ -233,7 +227,7 @@ public abstract class WebViewFragment extends Fragment implements OnSharedPrefer
 						Log.d("WebViewFragment", viewpage+": Received event. Drawing chart and table."+intent.toString());
 						
 						// chart					
-						view.loadUrl("javascript:drawChart()");
+						thisWebView.loadUrl("javascript:drawChart()");
 					
 						// table
 						if(isPortrait()){
@@ -254,12 +248,31 @@ public abstract class WebViewFragment extends Fragment implements OnSharedPrefer
 		}
 	}
 	
+	public void paint(){
+		try{
+			if(progressDiag != null){
+				progressDiag.setMessage("Painting charts...");
+			}						
+			Log.d("WebViewFragment", viewpage+": Received event. Drawing chart and table.");
+		
+			// chart					
+			thisWebView.loadUrl("javascript:drawChart()");
+	
+			// table
+			if(isPortrait()){
+				displayDataList(getActivity());
+			}
+		}finally{
+			progressDiag.dismiss();
+		}		
+	}
+	
 	@Override
 	public void onResume() {
 		super.onResume();
 		
 		// register BroadcastReceiver
-		BroadcastReceiver eventReceiver = myWebClient.getEventReceiver();
+		BroadcastReceiver eventReceiver = myWebClient.getEventReceiver();		
 		LocalBroadcastManager.getInstance(this.getActivity()).registerReceiver(eventReceiver, getBroadcastReceiverFilter());
 		
 		// register preference change Listener
@@ -278,6 +291,7 @@ public abstract class WebViewFragment extends Fragment implements OnSharedPrefer
 
 	}
 
+	
 	private ChartSettingsDialogFragment chartSettingsDialog;
 	private void showSettings(){
 		if(chartSettingsDialog == null){
@@ -289,8 +303,8 @@ public abstract class WebViewFragment extends Fragment implements OnSharedPrefer
 		chartSettingsDialog.show(getFragmentManager(), "test");
 	}
 	
+	private GrouppedDataListAdapter lvAdapter;
 	private void displayDataList(Context context){
-		GrouppedDataListAdapter lvAdapter;
 		try {
 			lvAdapter = new GrouppedDataListAdapter(getActivity(), getChartDataLoader().getDataRows());
 			thisListView.setAdapter(lvAdapter);
@@ -302,6 +316,10 @@ public abstract class WebViewFragment extends Fragment implements OnSharedPrefer
 		
 	private boolean isPortrait(){
 		return getResources().getConfiguration().orientation == Configuration.ORIENTATION_PORTRAIT;
+	}
+
+	public String getCurrentChartName() {
+		return currentChartName;
 	}
 
 	@Override
@@ -344,78 +362,23 @@ public abstract class WebViewFragment extends Fragment implements OnSharedPrefer
 	
 	// Methods for supporting ViewPager functionality
 	// ----------------------------------------------
-	protected static final int PRIMARY_PAGE_WITH_COLUMN_CHART_VIEWERS = 0;
-	protected static final int SECONDARY_PAGE_WITH_COLUMN_CHART_DURATION = 1;
-	protected static final int TERNARY_PAGE_WITH_PIE_CHART = 2;	
-
-	protected void loadChartData() {
-		switch(viewpage){
-		case PRIMARY_PAGE_WITH_COLUMN_CHART_VIEWERS:
-			getChartDataLoader().getTopViewInBatch("/viewbatch/"+getEventType(), "2013-02", "2013-05", getLoadOptions());
-			break;
-		case SECONDARY_PAGE_WITH_COLUMN_CHART_DURATION:
-			getChartDataLoader().getTopViewInBatch("/viewbatch/"+getEventType(), "2013-02", "2013-05", getLoadOptions());
-			break;
-		case TERNARY_PAGE_WITH_PIE_CHART:
-			getChartDataLoader().getTopViewInBatch("/view/"+getEventType(), "2013-02", "2013-05", getLoadOptions());
-			break;
-		default:
-			throw new IllegalStateException("ViewPage is out of range.");
-		}		
-	}
-	protected boolean match(Intent intent) {
-		String loadOptions = (String)intent.getExtras().get(ChartEvent.DATA_LOAD_OPTIONS);
-		return getLoadOptions().equals(loadOptions);
-	}
-	protected IntentFilter getBroadcastReceiverFilter() {
-		IntentFilter filter = new IntentFilter(ChartEvent.STATS_EVENT_DATA);
-		if(viewpage != TERNARY_PAGE_WITH_PIE_CHART){
-			filter.addCategory("/viewbatch/"+getEventType());
-		}else{
-			filter.addCategory("/view/"+getEventType());
-		}
-		return filter;
-	}
+	protected abstract void addJavascriptInterface(WebView view);
+	protected abstract Map<Integer, String> getViewPageHtmlMap();
+	protected abstract IntentFilter getBroadcastReceiverFilter();
+	protected abstract void loadChartData();
+	
 	protected String getLoadOptions(){
-		switch(viewpage){
-		case PRIMARY_PAGE_WITH_COLUMN_CHART_VIEWERS:
-			String options = currentChartOptions;
-			if(currentChartOptions.startsWith("duration")){
-				options = "viewers"+currentChartOptions.substring(currentChartOptions.indexOf(','));
-			}
-			return options;
-		case SECONDARY_PAGE_WITH_COLUMN_CHART_DURATION:
-			options = currentChartOptions;
-			if(currentChartOptions.startsWith("viewers")){
-				options = "duration"+currentChartOptions.substring(currentChartOptions.indexOf(','));
-			}
-			return options;
-		case TERNARY_PAGE_WITH_PIE_CHART:
-		default:
-			return currentChartOptions;
-		}
+		return currentChartOptions;
+	}
+	
+	protected boolean match(Intent intent) {
+		return (Integer)intent.getExtras().get(ChartEvent.DATA_LOADER_ID) == viewpage && 
+			((String)intent.getExtras().get(ChartEvent.DATA_LOAD_OPTIONS)).equals(getLoadOptions());
 	}
 
 	// Javascript interface methods
 	@JavascriptInterface
 	public String getData(){
 		return getChartDataLoader().getCurrentDataTable().toString();
-	}
-	
-	@JavascriptInterface
-	public String getOptions() throws JSONException{
-		switch(viewpage){
-		case PRIMARY_PAGE_WITH_COLUMN_CHART_VIEWERS:
-			return new JSONObject("{title: 'Live Usage (Channels)', "+ 	 
-					"hAxis: {title: 'Time'}, "+
-					"vAxis: {title: 'Viewers'}}").toString();
-		case SECONDARY_PAGE_WITH_COLUMN_CHART_DURATION:
-			return new JSONObject("{title: 'Live Usage (Channels)', "+ 	 
-					"hAxis: {title: 'Time'}, "+
-					"vAxis: {title: 'Total Watched Hours'}}").toString();
-		case TERNARY_PAGE_WITH_PIE_CHART:
-		default:
-			return new JSONObject("{title: 'Live Usage (Channels)'}").toString();
-		}
-	}  
+	}	
 }

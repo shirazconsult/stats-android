@@ -20,7 +20,7 @@
 				function(){
 					if(ready == 0){
 				  		console.log('Drawing chart....');
-						drawColumnChart(jsonData, options, 3);  // vaxisIdx = 3 = viewers
+						drawPieChart(jsonData, options, 'widgetShow');
 					}else{
 						console.log('Waiting for google charts to be loaded...');
 					}

@@ -21,6 +21,7 @@ import android.util.Log;
 
 import com.loopj.android.http.AsyncHttpClient;
 import com.loopj.android.http.JsonHttpResponseHandler;
+import com.shico.mobilestats.WebViewFragment;
 import com.shico.mobilestats.event.ChartEvent;
 
 public class ChartDataLoader {
@@ -45,11 +46,25 @@ public class ChartDataLoader {
 	private String baseUrl;
 	private String host;
 	private int port;
+	private WebViewFragment webview; 
 	
 	private JSONObject currentDataTable;
 
-	public ChartDataLoader(Context context) throws JSONException {
+	private int id;
+	public ChartDataLoader(Context context, int id) throws JSONException {
 		this.context = context;
+		this.id = id;
+		if(topViewColumns == null){
+			topViewColumns = buildTopViewColumns();
+		}
+		SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(context);
+		host = prefs.getString("host", "localhost");
+		port = Integer.parseInt(prefs.getString("port", "9118"));
+	}
+	public ChartDataLoader(WebViewFragment webview, int id) throws JSONException {
+		this.webview = webview;
+		this.context = webview.getActivity();
+		this.id = id;
 		if(topViewColumns == null){
 			topViewColumns = buildTopViewColumns();
 		}
@@ -149,7 +164,7 @@ public class ChartDataLoader {
 			@Override
 			public void onSuccess(JSONObject res) {
 				try {
-					JSONObject newDataTable = newBatchDataTable();
+					JSONObject newDataTable = newDataTable();
 
 					JSONArray rows = res.getJSONArray("rows");					
 					for(int i=0; i< rows.length(); i++){
@@ -176,7 +191,8 @@ public class ChartDataLoader {
 		
 	private void sendBroadcast(int status, Intent intent){
 		intent.putExtra(ChartEvent.DATA_LOAD_STATUS, status);
-		LocalBroadcastManager.getInstance(context).sendBroadcast(intent);
+//		LocalBroadcastManager.getInstance(context).sendBroadcast(intent);
+		webview.paint();
 	}
 	
 	public List<List<Object>> getDataRows() throws JSONException{
@@ -231,6 +247,13 @@ public class ChartDataLoader {
 		return rawBatchDataTable;
 	}
 
+	private JSONObject newDataTable() throws JSONException {
+		JSONObject rawDataTable = new JSONObject();
+		rawDataTable.put("cols", topViewColumns);
+		rawDataTable.put("rows", new JSONArray());
+		return rawDataTable;
+	}
+
 	private ConcurrentMap<String, JSONObject> temporaryCache;
 	List<List<Object>> temporaryRowCache = null;
 	
@@ -248,6 +271,7 @@ public class ChartDataLoader {
 	private Intent getIntent(String restCmd, String options){
 		Intent intent = new Intent(ChartEvent.STATS_EVENT_DATA);
 		intent.addCategory(restCmd);
+		intent.putExtra(ChartEvent.DATA_LOADER_ID, id);
 		intent.putExtra(ChartEvent.DATA_LOAD_OPTIONS, options);
 		return intent;
 	}

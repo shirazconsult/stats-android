@@ -13,14 +13,14 @@
 		}
 	  
 	  	function drawChart(){  	
-      		var options = JSON.parse(MovieRentWebView.getOptions());
-			var jsonData = JSON.parse(MovieRentWebView.getData());
-		
+	      	var options = JSON.parse(LiveUsageWebView.getOptions());
+			var jsonData = JSON.parse(LiveUsageWebView.getData());
+
 			setTimeout(
 				function(){
 					if(ready == 0){
-				  		console.log('Drawing chart....');
-						drawPieChart(jsonData, options, 'movieRent');
+				  		console.log('Drawing chart....');				  		
+						drawSimpleColumnChart(jsonData, options, 'LiveUsage', 3);  // 3 = viewers column idx
 					}else{
 						console.log('Waiting for google charts to be loaded...');
 					}

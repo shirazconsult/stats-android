@@ -133,11 +133,13 @@ public class MainActivity extends Activity {
 			chartViewPager = (ViewPager)findViewById(R.id.chart_pager);
 			chartPagerAdapter = new ChartPagerAdapter(getFragmentManager(), chartName, chartId);
 			chartViewPager.setAdapter(chartPagerAdapter);
+			chartViewPager.setOffscreenPageLimit(1);
 		}else{
 			chartPagerAdapter.setChartName(chartName);
 			chartPagerAdapter.setChartId(chartId);
 			chartPagerAdapter.notifyDataSetChanged();
 		}
+		chartViewPager.setCurrentItem(0);
 	}
 	
 	/* The click listner for ListView in the navigation drawer */

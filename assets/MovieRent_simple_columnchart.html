@@ -13,14 +13,14 @@
 		}
 	  
 	  	function drawChart(){  	
-      		var options = JSON.parse(WidgetShowWebView.getOptions());
-			var jsonData = JSON.parse(WidgetShowWebView.getData());
+      		var options = JSON.parse(MovieRentWebView.getOptions());
+			var jsonData = JSON.parse(MovieRentWebView.getData());
 		
 			setTimeout(
 				function(){
 					if(ready == 0){
 				  		console.log('Drawing chart....');
-						drawColumnChart(jsonData, options, 4);  // vaxisIdx = 4 = duration
+						drawSimpleColumnChart(jsonData, options, 'movieRent', 3);  // 3 = viewers column idx
 					}else{
 						console.log('Waiting for google charts to be loaded...');
 					}
