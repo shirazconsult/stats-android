@@ -1,0 +1,34 @@
+<html>
+  <head>
+    <script type="text/javascript" src="jsapi.js"></script>
+    <script type="text/javascript" src="chartUtil.js"></script>
+    <script type="text/javascript">
+    	google.load("visualization", "1", {packages:["corechart"]});     
+		var ready = 1;
+		google.setOnLoadCallback(sayReady);
+		
+		function sayReady(){
+			ready = 0;
+			console.log('Loaded corechart package');
+		}
+	  
+	  	function drawChart(){  	
+	      	var options = JSON.parse(LiveUsageWebView.getOptions());
+			var jsonData = JSON.parse(LiveUsageWebView.getData());
+
+			setTimeout(
+				function(){
+					if(ready == 0){
+				  		console.log('Drawing chart....');				  		
+						drawSimpleColumnChart(jsonData, options, 'LiveUsage', 3);  // 3 = viewers column idx
+					}else{
+						console.log('Waiting for google charts to be loaded...');
+					}
+				}, 100*ready);
+      	}      
+    </script>
+  </head>
+  <body>
+    <div id="chart_div" style="width: 100%; height: 100%;"></div>
+  </body>
+</html>

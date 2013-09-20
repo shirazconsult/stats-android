@@ -21,11 +21,11 @@ import android.util.Log;
 
 import com.loopj.android.http.AsyncHttpClient;
 import com.loopj.android.http.JsonHttpResponseHandler;
+import com.shico.mobilestats.WebViewFragment;
 import com.shico.mobilestats.event.ChartEvent;
 
-public abstract class ChartDataLoader {
+public class ChartDataLoader {
 	private static final String CHART_CACHE = "chart_cache";
-	private static final String CHART_DATA = "chart_data";
 	
 	// data index constants
 	public final static int typeIdx = 0; 
@@ -46,11 +46,25 @@ public abstract class ChartDataLoader {
 	private String baseUrl;
 	private String host;
 	private int port;
+	private WebViewFragment webview; 
 	
-	protected JSONObject currentDataTable;
+	private JSONObject currentDataTable;
 
-	public ChartDataLoader(Context context) throws JSONException {
+	private int id;
+	public ChartDataLoader(Context context, int id) throws JSONException {
 		this.context = context;
+		this.id = id;
+		if(topViewColumns == null){
+			topViewColumns = buildTopViewColumns();
+		}
+		SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(context);
+		host = prefs.getString("host", "localhost");
+		port = Integer.parseInt(prefs.getString("port", "9118"));
+	}
+	public ChartDataLoader(WebViewFragment webview, int id) throws JSONException {
+		this.webview = webview;
+		this.context = webview.getActivity();
+		this.id = id;
 		if(topViewColumns == null){
 			topViewColumns = buildTopViewColumns();
 		}
@@ -74,22 +88,24 @@ public abstract class ChartDataLoader {
 		return col;
 	}
 		
-//	public void getTopView(String restCmd, String from, String to, String options){
-//		String url = new StringBuilder(getBaseUrl()).
-//				append(restCmd).
-//				append("/").append(from).
-//				append("/").append(to).
-//				append("/").append(options).
-//				toString();
-//		
-//		JSONObject cached = getTemporaryCache().get(url);
-//		if(cached == null){
-//			loadChartTopViewData(url);
-//		}else{
-//			setCurrentDataTable(getTemporaryCache().get(url));
-//			sendBroadcast(ChartEvent.SUCCESS);
-//		}
-//	}
+	public void getTopView(String restCmd, String from, String to, String options){
+		String url = new StringBuilder(getBaseUrl()).
+				append(restCmd).
+				append("/").append(from).
+				append("/").append(to).
+				append("/").append(options).
+				toString();
+		
+		JSONObject cached = getTemporaryCache().get(url);
+		if(cached == null){
+			Log.d("ChartDataLoader", "Loading data from server: "+url);
+			loadChartTopViewData(url, getIntent(restCmd, options));
+		}else{
+			currentDataTable = getTemporaryCache().get(url);
+			Log.d("ChartDataLoader", "Loading data from cache: "+url);
+			sendBroadcast(ChartEvent.SUCCESS, getIntent(restCmd, options));
+		}
+	}
 
 	public void getTopViewInBatch(String restCmd, String from, String to, String options){
 		String url = new StringBuilder(getBaseUrl()).
@@ -102,21 +118,20 @@ public abstract class ChartDataLoader {
 		JSONObject cached = getTemporaryCache().get(url);
 		if(cached == null){
 			Log.d("ChartDataLoader", "Loading data from server: "+url);
-			loadChartTopViewDataInBatch(url);
+			loadChartTopViewDataInBatch(url, getIntent(restCmd, options));
 		}else{
 			currentDataTable = getTemporaryCache().get(url);
 			Log.d("ChartDataLoader", "Loading data from cache: "+url);
-			sendBroadcast(ChartEvent.SUCCESS);
+			sendBroadcast(ChartEvent.SUCCESS, getIntent(restCmd, options));
 		}
 	}
 
-	public void loadChartTopViewDataInBatch(final String url){
+	public void loadChartTopViewDataInBatch(final String url, final Intent intent){
 		client.get(url, new JsonHttpResponseHandler(){
 			@Override
 			public void onSuccess(JSONObject res) {
 				try {
 					JSONObject newDataTable = newBatchDataTable();
-
 					JSONArray rows = res.getJSONArray("result");
 					int rownum = 0;
 					for(int i=0; i< rows.length(); i++){
@@ -129,58 +144,55 @@ public abstract class ChartDataLoader {
 					getTemporaryCache().put(url, currentDataTable);
 					temporaryRowCache = null;
 				} catch (JSONException e) {
-					sendBroadcast(ChartEvent.FAILURE);
+					Log.e("JsonHttpResponseHandler", "Failed to deserialize response for "+url);
+					sendBroadcast(ChartEvent.FAILURE, intent);
 					return;
 				}
-				sendBroadcast(ChartEvent.SUCCESS);
+				sendBroadcast(ChartEvent.SUCCESS, intent);
 			}
 
 			@Override
 			public void onFailure(Throwable t, JSONObject arg1) {
-				Log.e("ChartDataLoader", "Failed to retrieve data for "+getIntentAction()+". "+(t != null ? t.getMessage() : ""));
-				sendBroadcast(ChartEvent.FAILURE);
+				Log.e("ChartDataLoader", "Failed to retrieve data for "+intent.toString()+". "+(t != null ? t.getMessage() : ""));
+				sendBroadcast(ChartEvent.FAILURE, intent);
 			}
 		});		
 	}
 	
-//	public void loadChartTopViewData(final String url){
-//		client.get(url, new JsonHttpResponseHandler(){
-//			@Override
-//			public void onSuccess(JSONObject res) {
-//				try {
-//					// empty the datatable rows
-//					newDataTable().put("rows", new JSONArray());
-//
-//					JSONArray rows = res.getJSONArray("rows");					
-//					for(int i=0; i< rows.length(); i++){
-//						JSONArray row = rows.getJSONObject(i).getJSONArray("result");
-//						newDataTable().getJSONArray("rows").put(row);
-//					}
-//					getTemporaryCache().put(url, newDataTable());
-//					temporaryRowCache = null;
-//				} catch (JSONException e) {
-//					sendBroadcast(ChartEvent.FAILURE);
-//					return;
-//				}
-//				sendBroadcast(ChartEvent.SUCCESS);
-//			}
-//
-//			@Override
-//			public void onFailure(Throwable t, JSONObject arg1) {
-//				Log.e("ChartDataLoader", "Failed to retrieve data for "+getIntentAction()+". "+(t != null ? t.getMessage() : ""));
-//				sendBroadcast(ChartEvent.FAILURE);
-//			}
-//		});
-//	}
-		
-	private String getIntentAction() {
-		return ChartEvent.STATS_EVENT_DATA;
-	}
+	public void loadChartTopViewData(final String url, final Intent intent){
+		client.get(url, new JsonHttpResponseHandler(){
+			@Override
+			public void onSuccess(JSONObject res) {
+				try {
+					JSONObject newDataTable = newDataTable();
 
-	private void sendBroadcast(int status){
-		Intent intent = new Intent(getIntentAction());
+					JSONArray rows = res.getJSONArray("rows");					
+					for(int i=0; i< rows.length(); i++){
+						JSONArray row = rows.getJSONObject(i).getJSONArray("result");
+						newDataTable.getJSONArray("rows").put(row);
+					}
+					currentDataTable = newDataTable;
+					getTemporaryCache().put(url, currentDataTable);
+					temporaryRowCache = null;
+				} catch (JSONException e) {
+					sendBroadcast(ChartEvent.FAILURE, intent);
+					return;
+				}
+				sendBroadcast(ChartEvent.SUCCESS, intent);
+			}
+
+			@Override
+			public void onFailure(Throwable t, JSONObject arg1) {
+				Log.e("ChartDataLoader", "Failed to retrieve data for "+intent.toString()+". "+(t != null ? t.getMessage() : ""));
+				sendBroadcast(ChartEvent.FAILURE, intent);
+			}
+		});
+	}
+		
+	private void sendBroadcast(int status, Intent intent){
 		intent.putExtra(ChartEvent.DATA_LOAD_STATUS, status);
-		LocalBroadcastManager.getInstance(context).sendBroadcast(intent);
+//		LocalBroadcastManager.getInstance(context).sendBroadcast(intent);
+		webview.paint();
 	}
 	
 	public List<List<Object>> getDataRows() throws JSONException{
@@ -235,6 +247,13 @@ public abstract class ChartDataLoader {
 		return rawBatchDataTable;
 	}
 
+	private JSONObject newDataTable() throws JSONException {
+		JSONObject rawDataTable = new JSONObject();
+		rawDataTable.put("cols", topViewColumns);
+		rawDataTable.put("rows", new JSONArray());
+		return rawDataTable;
+	}
+
 	private ConcurrentMap<String, JSONObject> temporaryCache;
 	List<List<Object>> temporaryRowCache = null;
 	
@@ -247,5 +266,17 @@ public abstract class ChartDataLoader {
 			temporaryCache = new ConcurrentHashMap<String, JSONObject>();
 		}
 		return temporaryCache;
+	}
+	
+	private Intent getIntent(String restCmd, String options){
+		Intent intent = new Intent(ChartEvent.STATS_EVENT_DATA);
+		intent.addCategory(restCmd);
+		intent.putExtra(ChartEvent.DATA_LOADER_ID, id);
+		intent.putExtra(ChartEvent.DATA_LOAD_OPTIONS, options);
+		return intent;
+	}
+
+	public JSONObject getCurrentDataTable() {
+		return currentDataTable;
 	}
 }
